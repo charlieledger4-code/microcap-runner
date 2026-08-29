@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/github_phase2_economic.py'
+      - 'scripts/github_phase2_economic_v2.py'
       - '.github/workflows/phase2-economic.yml'
       - 'requirements.txt'
   workflow_dispatch:
@@ -32,7 +33,7 @@ jobs:
         run: pytest -q
       - name: Run full lifecycle economic-tail study
         run: |
-          python scripts/github_phase2_economic.py --out reports/economic_phase2
+          python scripts/github_phase2_economic_v2.py --out reports/economic_phase2
       - name: Upload compact economic results
         if: always()
         uses: actions/upload-artifact@v4
