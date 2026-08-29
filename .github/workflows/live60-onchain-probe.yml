@@ -1,0 +1,44 @@
+name: live60-onchain-probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/live60_onchain_probe.py'
+      - 'src/ingest/pump_trade_event.py'
+      - 'src/live/feature60.py'
+      - '.github/workflows/live60-onchain-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: .
+      SOLANA_RPC_URL: https://api.mainnet-beta.solana.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install probe dependencies
+        run: pip install 'aiohttp>=3.9' 'websockets>=12' pytest
+      - name: Decoder and feature tests
+        run: pytest -q tests/test_pump_trade_event.py tests/test_live_feature60.py
+      - name: Run bounded prospective on-chain probe
+        run: python scripts/live60_onchain_probe.py --out reports/live60_onchain --collect-s 25 --max-mints 3 --age-s 60 --grace-s 8 --tx-limit 250
+      - name: Upload probe evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live60-onchain-probe
+          path: |
+            reports/live60_onchain/SUMMARY.json
+            reports/live60_onchain/launches.jsonl
+            reports/live60_onchain/feature_rows.jsonl
+          if-no-files-found: warn
+          retention-days: 14
