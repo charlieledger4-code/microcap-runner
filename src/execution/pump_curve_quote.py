@@ -1,8 +1,8 @@
 """Integer Pump bonding-curve quote primitives for paper execution.
 
 The math mirrors Pump SDK/reference behavior rather than applying a generic AMM
-haircut to chart price.  Buy budgets include fees; fees are removed before the
-constant-product swap.  Sell outputs are computed from the curve and fees are
+haircut to chart price. Buy budgets include fees; fees are removed before the
+constant-product swap. Sell outputs are computed from the curve and fees are
 removed afterwards.
 
 No transaction is signed or submitted by this module.
@@ -17,6 +17,15 @@ from src.ingest.pump_trade_event import PumpTradeEvent, SYSTEM_PROGRAM, WSOL_MIN
 BPS=10_000
 LAMPORTS_PER_SOL=1_000_000_000
 TOKEN_SCALE=1_000_000
+
+# Current official Pump bonding-curve schedule (pump.fun/docs/fees, updated
+# 2026-05-20): protocol 0.95% + creator 0.30% = 1.25% total for SOL/USDC curves.
+# Some live TradeEvent variants have surfaced zeroed fee-bps fields. Treating
+# those zeros literally understates paper execution cost, so native-curve quote
+# states fall back to the documented schedule until the event layout is proven.
+CURRENT_PROTOCOL_FEE_BPS=95
+CURRENT_CREATOR_FEE_BPS=30
+CURRENT_TOTAL_FEE_BPS=125
 
 
 def ceil_div(a:int,b:int)->int:
@@ -77,19 +86,32 @@ class SellQuote:
 
 
 def state_from_trade_event(ev:PumpTradeEvent)->CurveState|None:
-    """Use the post-trade reserves/rates emitted by Pump as a quote state."""
+    """Use post-trade reserves/rates emitted by Pump as a quote state.
+
+    Zeroed fee-bps fields are not accepted as a zero-fee market. Current Pump
+    documentation specifies 1.25% total bonding-curve fees, so for native-SOL
+    curve events with all fee fields zero we apply the documented 95/30 bps
+    protocol/creator split. This is deliberately conservative versus silently
+    producing a zero-fee paper fill.
+    """
     if ev.quote_mint not in (None,SYSTEM_PROGRAM,WSOL_MINT):return None
     quote=ev.virtual_quote_reserves_raw or ev.virtual_sol_reserves_raw
     realq=ev.real_quote_reserves_raw if ev.real_quote_reserves_raw is not None else ev.real_sol_reserves_raw
     if quote<=0 or ev.virtual_token_reserves_raw<=0:return None
+    pf=max(0,int(ev.fee_basis_points or 0))
+    cf=max(0,int(ev.creator_fee_basis_points or 0))
+    cash=max(0,int(ev.cashback_fee_basis_points or 0))
+    if pf+cf+cash==0:
+        pf=CURRENT_PROTOCOL_FEE_BPS
+        cf=CURRENT_CREATOR_FEE_BPS
     return CurveState(
         virtual_token_reserves_raw=int(ev.virtual_token_reserves_raw),
         virtual_quote_reserves_raw=int(quote),
         real_token_reserves_raw=max(0,int(ev.real_token_reserves_raw)),
         real_quote_reserves_raw=max(0,int(realq)),
-        protocol_fee_bps=max(0,int(ev.fee_basis_points or 0)),
-        creator_fee_bps=max(0,int(ev.creator_fee_basis_points or 0)),
-        cashback_fee_bps=max(0,int(ev.cashback_fee_basis_points or 0)),
+        protocol_fee_bps=pf,
+        creator_fee_bps=cf,
+        cashback_fee_bps=cash,
         quote_is_sol=True,
         observed_timestamp=int(ev.source_block_time if ev.source_block_time is not None else ev.timestamp),
         source_signature=ev.source_signature,
