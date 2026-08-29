@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'scripts/live60_onchain_probe.py'
+      - 'scripts/live60_onchain_probe_v2.py'
       - 'src/ingest/pump_trade_event.py'
       - 'src/live/feature60.py'
       - '.github/workflows/live60-onchain-probe.yml'
@@ -29,16 +29,17 @@ jobs:
         run: pip install 'aiohttp>=3.9' 'websockets>=12' pytest
       - name: Decoder and feature tests
         run: pytest -q tests/test_pump_trade_event.py tests/test_live_feature60.py
-      - name: Run bounded prospective on-chain probe
-        run: python scripts/live60_onchain_probe.py --out reports/live60_onchain --collect-s 25 --max-mints 3 --age-s 60 --grace-s 8 --tx-limit 250
+      - name: Run completeness-gated prospective on-chain probe
+        run: python scripts/live60_onchain_probe_v2.py --out reports/live60_onchain_v2 --collect-s 20 --max-mints 2 --age-s 60 --grace-s 10 --tx-limit 300 --sweeps 3 --sweep-gap-s 3 --rpc-interval .28 --min-fetch-fraction .98
       - name: Upload probe evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: live60-onchain-probe
+          name: live60-onchain-probe-v2
           path: |
-            reports/live60_onchain/SUMMARY.json
-            reports/live60_onchain/launches.jsonl
-            reports/live60_onchain/feature_rows.jsonl
+            reports/live60_onchain_v2/SUMMARY.json
+            reports/live60_onchain_v2/launches.jsonl
+            reports/live60_onchain_v2/feature_rows.jsonl
+            reports/live60_onchain_v2/sweep_audit.jsonl
           if-no-files-found: warn
           retention-days: 14
