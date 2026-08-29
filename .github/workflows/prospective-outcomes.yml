@@ -1,0 +1,64 @@
+name: prospective-executable-outcomes
+
+on:
+  schedule:
+    - cron: '47 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prospective-outcomes.yml'
+      - 'scripts/track_pending_outcomes.py'
+      - 'src/live/executable_outcomes.py'
+      - 'src/execution/pump_curve_quote.py'
+      - 'src/execution/pumpswap_quote.py'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prospective-live60-ledger
+  cancel-in-progress: false
+
+jobs:
+  outcomes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      PYTHONPATH: .
+      SOLANA_RPC_URL: https://api.mainnet-beta.solana.com
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install outcome runtime
+        run: pip install 'aiohttp>=3.9,<4' pytest
+      - name: Outcome integrity tests
+        run: |
+          python -m py_compile scripts/track_pending_outcomes.py
+          pytest -q tests/test_pump_curve_quote.py tests/test_pumpswap_event.py tests/test_pumpswap_quote.py tests/test_executable_outcomes.py
+      - name: Mount append-only prospective ledger
+        run: |
+          git fetch origin prospective-ledger
+          rm -rf /tmp/prospective-ledger-wt
+          git worktree add /tmp/prospective-ledger-wt origin/prospective-ledger
+      - name: Track 1h executable outcomes
+        run: python scripts/track_pending_outcomes.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 3600 --max-rows 12 --max-pages 8 --max-txs 2500
+      - name: Track 6h executable outcomes
+        run: python scripts/track_pending_outcomes.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 21600 --max-rows 6 --max-pages 12 --max-txs 3500
+      - name: Track 24h executable outcomes
+        run: python scripts/track_pending_outcomes.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 86400 --max-rows 4 --max-pages 16 --max-txs 5000
+      - name: Commit outcome evidence without modifying original scans
+        run: |
+          git -C /tmp/prospective-ledger-wt config user.name 'microcap-research-bot'
+          git -C /tmp/prospective-ledger-wt config user.email 'actions@users.noreply.github.com'
+          git -C /tmp/prospective-ledger-wt add prospective/outcomes || true
+          if git -C /tmp/prospective-ledger-wt diff --cached --quiet; then
+            echo 'No matured new outcomes.'
+          else
+            git -C /tmp/prospective-ledger-wt commit -m "Append matured executable outcomes ${GITHUB_RUN_ID}"
+            git -C /tmp/prospective-ledger-wt push origin HEAD:prospective-ledger
+          fi
