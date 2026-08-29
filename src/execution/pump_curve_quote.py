@@ -45,6 +45,7 @@ class CurveState:
     quote_is_sol:bool=True
     observed_timestamp:int|None=None
     source_signature:str|None=None
+    fee_source:str='explicit_state'
 
     @property
     def total_fee_bps(self)->int:
@@ -59,6 +60,10 @@ class BuyQuote:
     swap_quote_in_raw:int
     tokens_out_raw:int
     total_fee_bps:int
+    protocol_fee_bps:int
+    creator_fee_bps:int
+    cashback_fee_bps:int
+    fee_source:str
     implied_fee_raw:int
     average_price_sol:float|None
     price_impact_bps:float|None
@@ -73,6 +78,10 @@ class SellQuote:
     tokens_in_raw:int
     gross_quote_out_raw:int
     net_quote_out_raw:int
+    protocol_fee_bps:int
+    creator_fee_bps:int
+    cashback_fee_bps:int
+    fee_source:str
     protocol_fee_raw:int
     creator_fee_raw:int
     cashback_fee_raw:int
@@ -91,8 +100,8 @@ def state_from_trade_event(ev:PumpTradeEvent)->CurveState|None:
     Zeroed fee-bps fields are not accepted as a zero-fee market. Current Pump
     documentation specifies 1.25% total bonding-curve fees, so for native-SOL
     curve events with all fee fields zero we apply the documented 95/30 bps
-    protocol/creator split. This is deliberately conservative versus silently
-    producing a zero-fee paper fill.
+    protocol/creator split. Fee provenance is retained on every downstream quote
+    so fallback-derived paper fills can be separated from event-derived fills.
     """
     if ev.quote_mint not in (None,SYSTEM_PROGRAM,WSOL_MINT):return None
     quote=ev.virtual_quote_reserves_raw or ev.virtual_sol_reserves_raw
@@ -101,9 +110,11 @@ def state_from_trade_event(ev:PumpTradeEvent)->CurveState|None:
     pf=max(0,int(ev.fee_basis_points or 0))
     cf=max(0,int(ev.creator_fee_basis_points or 0))
     cash=max(0,int(ev.cashback_fee_basis_points or 0))
+    fee_source='trade_event'
     if pf+cf+cash==0:
         pf=CURRENT_PROTOCOL_FEE_BPS
         cf=CURRENT_CREATOR_FEE_BPS
+        fee_source='documented_curve_fallback_2026_05_20'
     return CurveState(
         virtual_token_reserves_raw=int(ev.virtual_token_reserves_raw),
         virtual_quote_reserves_raw=int(quote),
@@ -115,6 +126,7 @@ def state_from_trade_event(ev:PumpTradeEvent)->CurveState|None:
         quote_is_sol=True,
         observed_timestamp=int(ev.source_block_time if ev.source_block_time is not None else ev.timestamp),
         source_signature=ev.source_signature,
+        fee_source=fee_source,
     )
 
 
@@ -149,7 +161,10 @@ def quote_buy_by_gross_quote_raw(state:CurveState,gross_quote_raw:int)->BuyQuote
     avg=(gross/LAMPORTS_PER_SOL)/(tokens/TOKEN_SCALE) if tokens>0 else None
     spot=spot_price_sol(state)
     impact=((avg/spot)-1)*BPS if avg is not None and spot else None
-    return BuyQuote(gross,swap,tokens,fee_bps,implied,avg,impact,limited,state.source_signature)
+    return BuyQuote(
+        gross,swap,tokens,fee_bps,state.protocol_fee_bps,state.creator_fee_bps,
+        state.cashback_fee_bps,state.fee_source,implied,avg,impact,limited,state.source_signature
+    )
 
 
 def _fee(raw:int,bps:int)->int:
@@ -169,7 +184,10 @@ def quote_sell_tokens_raw(state:CurveState,tokens_in_raw:int)->SellQuote:
     avg=(net/LAMPORTS_PER_SOL)/(tokens/TOKEN_SCALE) if tokens>0 else None
     spot=spot_price_sol(state)
     impact=(1-(avg/spot))*BPS if avg is not None and spot else None
-    return SellQuote(tokens,raw,net,pf,cf,cash,total,avg,impact,limited,state.source_signature)
+    return SellQuote(
+        tokens,raw,net,state.protocol_fee_bps,state.creator_fee_bps,state.cashback_fee_bps,
+        state.fee_source,pf,cf,cash,total,avg,impact,limited,state.source_signature
+    )
 
 
 def apply_buy_to_state(state:CurveState,q:BuyQuote)->CurveState:
@@ -188,4 +206,5 @@ def apply_buy_to_state(state:CurveState,q:BuyQuote)->CurveState:
         protocol_fee_bps=state.protocol_fee_bps,creator_fee_bps=state.creator_fee_bps,
         cashback_fee_bps=state.cashback_fee_bps,quote_is_sol=state.quote_is_sol,
         observed_timestamp=state.observed_timestamp,source_signature=state.source_signature,
+        fee_source=state.fee_source,
     )
