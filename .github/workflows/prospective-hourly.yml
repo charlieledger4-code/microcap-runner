@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/prospective-hourly.yml'
       - 'scripts/live60_stream_scan.py'
+      - 'scripts/select_prospective_controls.py'
       - 'src/ingest/pump_log_events.py'
       - 'src/live/feature60.py'
       - 'src/live/feature60_v2.py'
@@ -72,6 +73,11 @@ jobs:
             --sweep-gap-s 1.5 \
             --rpc-interval .22 \
             --min-accounting-fraction .98
+      - name: Freeze random and near-miss controls before outcomes
+        run: |
+          python scripts/select_prospective_controls.py \
+            --rows reports/prospective_current/scored_rows.jsonl \
+            --run-key "${GITHUB_RUN_ID}/${GITHUB_RUN_ATTEMPT}"
       - name: Add immutable run metadata
         run: |
           python - <<'PY'
@@ -84,7 +90,8 @@ jobs:
             'github_event':os.environ['GITHUB_EVENT_NAME'],
             'recorded_ms':int(time.time()*1000),
             'champion_model_path':'models/livecore60_v1',
-            'scanner':'stream_v3'
+            'scanner':'stream_v3',
+            'control_selection':'sha256_random_v1+max_below_q95_v1'
           },indent=2))
           PY
       - name: Upload scan artifact
