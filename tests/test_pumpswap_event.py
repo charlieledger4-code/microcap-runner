@@ -34,5 +34,6 @@ def test_decode_pool_and_buy_sell_events():
     assert isinstance(buy,PumpSwapTradeEvent) and buy.side=='buy' and buy.ix_name=='buy'
     assert isinstance(sell,PumpSwapTradeEvent) and sell.side=='sell'
     assert buy.execution_price_quote(p)==0.031
-    assert sell.execution_price_quote(p)==0.06
+    # 120,000 lamports = 0.00012 SOL over 2 base tokens = 0.00006 SOL/token.
+    assert sell.execution_price_quote(p)==0.00006
     assert buy.reserve_price_quote(p)>0 and sell.reserve_price_quote(p)>0
