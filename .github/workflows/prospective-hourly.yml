@@ -1,6 +1,17 @@
 name: prospective-hourly-live60
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prospective-hourly.yml'
+      - 'scripts/live60_stream_scan.py'
+      - 'src/ingest/pump_log_events.py'
+      - 'src/live/feature60.py'
+      - 'src/live/feature60_v2.py'
+      - 'src/live/scoring.py'
+      - 'models/livecore60_v1/**'
+      - 'requirements-frozen-model.txt'
   schedule:
     - cron: '17 * * * *'
   workflow_dispatch:
