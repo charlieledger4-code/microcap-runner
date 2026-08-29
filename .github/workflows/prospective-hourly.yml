@@ -95,7 +95,7 @@ jobs:
             'champion_model_path':'models/livecore60_v1',
             'scanner':'stream_v4',
             'action_time_policy':'observer_received_plus_60s; immutable before RPC audit',
-            'control_selection':'sha256_random_v1+max_below_q95_v1'
+            'control_selection':'sha256_random_all_valid_v2+max_below_q95_v1'
           },indent=2))
           PY
       - name: Upload scan artifact
