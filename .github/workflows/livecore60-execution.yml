@@ -1,5 +1,6 @@
 name: livecore60-execution
 
+# Historical execution stress is deliberately rerun only from a green integrity tree.
 on:
   push:
     branches: [main]
