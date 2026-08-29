@@ -1,0 +1,49 @@
+name: livecore60-models
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/github_livecore60_models.py'
+      - '.github/workflows/livecore60-models.yml'
+      - 'scripts/github_phase2_stress60.py'
+      - 'scripts/github_phase2_stress60_lowmem.py'
+      - 'requirements.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  livecore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      PYTHONPATH: .
+      HF_HUB_DISABLE_XET: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Integrity tests
+        run: pytest -q
+      - name: Stress-test and freeze live-core models
+        run: python scripts/github_livecore60_models.py --out reports/livecore60
+      - name: Upload live-core research package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: livecore60-models
+          path: |
+            reports/livecore60/LIVECORE_MANIFEST.json
+            reports/livecore60/LIVECORE_POLICY.md
+            reports/livecore60/folds.csv
+            reports/livecore60/summary.csv
+            reports/livecore60/models/*.joblib
+          if-no-files-found: warn
+          retention-days: 90
