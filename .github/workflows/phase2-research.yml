@@ -3,6 +3,13 @@ name: phase2-research
 on:
   push:
     branches: [main]
+    paths:
+      - 'scripts/github_phase2_runner.py'
+      - 'src/models/baseline.py'
+      - 'src/models/leakage.py'
+      - 'tests/test_bootstrap_integrity.py'
+      - 'requirements.txt'
+      - '.github/workflows/phase2-research.yml'
   workflow_dispatch:
     inputs:
       mode:
