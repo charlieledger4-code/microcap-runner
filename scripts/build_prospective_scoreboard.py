@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Aggregate immutable prospective executable outcomes into a research scoreboard.
 
-Only ``status=COMPLETE`` outcome files are admitted.  Groups may overlap (for
-example a deterministic random control can also happen to be a champion
-candidate); overlap is retained rather than silently changing the random sample.
+Only ``status=COMPLETE`` files enter hit-rate/performance calculations, but every
+incomplete/quarantined outcome is counted by horizon and reason so missingness
+cannot disappear silently. Groups may overlap (a random control may also be a
+champion candidate); overlap is retained rather than changing the random sample.
 """
 from __future__ import annotations
 
 import argparse,json,math,time
+from collections import Counter
 from pathlib import Path
 from statistics import median
 
@@ -60,16 +62,28 @@ def summarize(rows):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--ledger-root',required=True);p.add_argument('--out',required=True);a=p.parse_args()
-    root=Path(a.ledger_root);records=[]
-    for f in sorted((root/'prospective'/'outcomes').glob('*/*/*.json')) if (root/'prospective'/'outcomes').exists() else []:
+    root=Path(a.ledger_root);records=[];incomplete=[];all_files=[]
+    paths=sorted((root/'prospective'/'outcomes').glob('*/*/*.json')) if (root/'prospective'/'outcomes').exists() else []
+    for f in paths:
         try:x=json.loads(f.read_text())
         except Exception:continue
-        if x.get('status')!='COMPLETE':continue
-        x['_path']=str(f.relative_to(root));records.append(x)
+        x['_path']=str(f.relative_to(root));all_files.append(x)
+        if x.get('status')=='COMPLETE':records.append(x)
+        else:incomplete.append(x)
     by_h={}
     for x in records:by_h.setdefault(str(x.get('horizon_s')),[]).append(x)
-    result={'generated_ms':int(time.time()*1000),'complete_outcome_files':len(records),'horizons':{},'guard':'Derived scoreboard only. Immutable scan/outcome files remain the source of truth; incomplete outcomes are excluded.'}
-    for h,rows in sorted(by_h.items(),key=lambda z:int(z[0])):
+    inc_by_h={}
+    for x in incomplete:inc_by_h.setdefault(str(x.get('horizon_s')),[]).append(x)
+    result={
+        'generated_ms':int(time.time()*1000),
+        'outcome_files_total':len(all_files),'complete_outcome_files':len(records),'incomplete_outcome_files':len(incomplete),
+        'incomplete_by_reason':dict(Counter(str(x.get('reason') or x.get('status') or 'unknown') for x in incomplete)),
+        'horizons':{},
+        'guard':'Derived scoreboard only. Hit rates use COMPLETE outcomes; incomplete/quarantined outcomes are reported separately and never silently dropped from data-quality reporting.',
+    }
+    horizons=sorted(set(by_h)|set(inc_by_h),key=lambda z:int(z))
+    for h in horizons:
+        rows=by_h.get(h,[]);inc=inc_by_h.get(h,[])
         names=sorted({g for x in rows for g in groups(x)})
         sm={g:summarize([x for x in rows if g in groups(x)]) for g in names}
         comparisons={}
@@ -78,8 +92,12 @@ def main():
             r=((sm.get('random_control') or {}).get('targets') or {}).get(target) or {}
             cr=c.get('rate');rr=r.get('rate')
             comparisons[target]={'candidate_vs_random_lift':(cr/rr if cr is not None and rr not in (None,0) else None),'candidate_rate':cr,'random_rate':rr}
-        result['horizons'][h]={'groups':sm,'comparisons':comparisons}
+        result['horizons'][h]={
+            'complete_n':len(rows),'incomplete_n':len(inc),
+            'incomplete_reasons':dict(Counter(str(x.get('reason') or x.get('status') or 'unknown') for x in inc)),
+            'groups':sm,'comparisons':comparisons,
+        }
     out=Path(a.out);out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(result,indent=2))
-    print(json.dumps({'complete_outcome_files':len(records),'horizons':list(result['horizons'])},indent=2))
+    print(json.dumps({'outcome_files_total':len(all_files),'complete':len(records),'incomplete':len(incomplete),'horizons':horizons},indent=2))
 
 if __name__=='__main__':main()
