@@ -1,0 +1,178 @@
+{
+  "decision_age_seconds": 60,
+  "model_family": "HistGradientBoostingClassifier inside median-imputation Pipeline",
+  "feature_contract": "live_core_free_v1",
+  "features": [
+    "human_trades",
+    "buys",
+    "sells",
+    "unique_wallets",
+    "unique_buyers",
+    "unique_sellers",
+    "valid_volume_sol",
+    "buy_volume_sol",
+    "sell_volume_sol",
+    "buy_sell_volume_ratio",
+    "recent_trades",
+    "prior_trades",
+    "recent_buyers",
+    "prior_buyers",
+    "recent_volume_sol",
+    "prior_volume_sol",
+    "tx_acceleration",
+    "buyer_acceleration",
+    "volume_acceleration",
+    "last_trade_gap_sec",
+    "first_price_sol",
+    "entry_price_sol",
+    "price_return",
+    "price_range_ratio",
+    "market_cap_sol",
+    "creator_trades",
+    "creator_buy_volume_sol",
+    "initial_buy_sol",
+    "is_mayhem_mode",
+    "hour_utc",
+    "dow_utc"
+  ],
+  "rows": 310111,
+  "trade_shards": 18,
+  "historical_first_detected_at": "2026-06-05 09:12:26.343743+00:00",
+  "historical_last_detected_at": "2026-07-14 15:01:17.462185+00:00",
+  "source_repo": "Slinky21/Pumpfun_Memecoin_Corpus",
+  "random_state": 20260829,
+  "targets": {
+    "5": {
+      "positives": 3159,
+      "base_rate": 0.010186675093756752,
+      "model_file": "hgb_livecore_60s_5x.joblib",
+      "model_sha256": "feb4dc7b991b6f4af26ee573256f3bebae6b2a9e14b50a4c9ca2c4e3c0d7e8e5",
+      "score_thresholds": {
+        "0.95": 0.8293972827048735,
+        "0.99": 0.8854245885392307,
+        "0.995": 0.8928217872792169,
+        "0.999": 0.9027752232610939
+      }
+    },
+    "10": {
+      "positives": 1096,
+      "base_rate": 0.003534218392769041,
+      "model_file": "hgb_livecore_60s_10x.joblib",
+      "model_sha256": "d28a607fce93ba4320a85c41bcdb19d3a7c065aad712a005e563cbc76c78074d",
+      "score_thresholds": {
+        "0.95": 0.8072107976094448,
+        "0.99": 0.8678932396379199,
+        "0.995": 0.8711575737756854,
+        "0.999": 0.8754860268135511
+      }
+    },
+    "25": {
+      "positives": 368,
+      "base_rate": 0.0011866718691049335,
+      "model_file": "hgb_livecore_60s_25x.joblib",
+      "model_sha256": "851c57dca4bd21327d90219c88bef0669ce7182705bb67cb1413cfc03659ea19",
+      "score_thresholds": {
+        "0.95": 0.7771384391410208,
+        "0.99": 0.8586738451435101,
+        "0.995": 0.8691955234871324,
+        "0.999": 0.8791403225994675
+      }
+    },
+    "100": {
+      "positives": 104,
+      "base_rate": 0.0003353637890948725,
+      "model_file": "hgb_livecore_60s_100x.joblib",
+      "model_sha256": "ebd2cdd69a44558f55e09e6b8bcfb5b05a33018480c2925f8e8a474c9b8ff749",
+      "score_thresholds": {
+        "0.95": 0.638922793101855,
+        "0.99": 0.8257742129321508,
+        "0.995": 0.8257742129321508,
+        "0.999": 0.8257742129321508
+      }
+    }
+  },
+  "fold_summary": [
+    {
+      "target": 5,
+      "model": "full_reference",
+      "folds": 4,
+      "median_top1_lift": 9.46989048750406,
+      "min_top1_lift": 4.457413479052823,
+      "max_top1_lift": 47.990169203138294,
+      "sum_top100_hits": 91,
+      "aggregate_selected": 1502
+    },
+    {
+      "target": 5,
+      "model": "live_core",
+      "folds": 4,
+      "median_top1_lift": 10.543791049342875,
+      "min_top1_lift": 3.1379543046636464,
+      "max_top1_lift": 20.466395689573684,
+      "sum_top100_hits": 32,
+      "aggregate_selected": 1502
+    },
+    {
+      "target": 10,
+      "model": "full_reference",
+      "folds": 4,
+      "median_top1_lift": 10.190754820822058,
+      "min_top1_lift": 2.2707578100835137,
+      "max_top1_lift": 15.835263157894738,
+      "sum_top100_hits": 12,
+      "aggregate_selected": 1502
+    },
+    {
+      "target": 10,
+      "model": "live_core",
+      "folds": 4,
+      "median_top1_lift": 4.909968336399304,
+      "min_top1_lift": 2.1598587574014245,
+      "max_top1_lift": 6.680984340044743,
+      "sum_top100_hits": 7,
+      "aggregate_selected": 1502
+    },
+    {
+      "target": 25,
+      "model": "full_reference",
+      "folds": 4,
+      "median_top1_lift": 12.316386971527178,
+      "min_top1_lift": 4.62767425477916,
+      "max_top1_lift": 40.08590604026846,
+      "sum_top100_hits": 4,
+      "aggregate_selected": 1502
+    },
+    {
+      "target": 25,
+      "model": "live_core",
+      "folds": 4,
+      "median_top1_lift": 3.8775317581200435,
+      "min_top1_lift": 0.0,
+      "max_top1_lift": 16.715,
+      "sum_top100_hits": 2,
+      "aggregate_selected": 1502
+    },
+    {
+      "target": 100,
+      "model": "full_reference",
+      "folds": 4,
+      "median_top1_lift": 24.108381147540985,
+      "min_top1_lift": 6.254590984974958,
+      "max_top1_lift": 66.80984340044743,
+      "sum_top100_hits": 2,
+      "aggregate_selected": 1502
+    },
+    {
+      "target": 100,
+      "model": "live_core",
+      "folds": 4,
+      "median_top1_lift": 0.0,
+      "min_top1_lift": 0.0,
+      "max_top1_lift": 7.714754098360656,
+      "sum_top100_hits": 0,
+      "aggregate_selected": 1502
+    }
+  ],
+  "guard": "This model is frozen before consuming any prospective trade outcomes. Thresholds are training-score quantiles, not calibrated probabilities.",
+  "elapsed_sec": 479.15667176246643
+}
