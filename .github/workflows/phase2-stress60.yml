@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/github_phase2_stress60.py'
+      - 'scripts/github_phase2_stress60_lowmem.py'
       - '.github/workflows/phase2-stress60.yml'
       - 'requirements.txt'
   workflow_dispatch:
@@ -31,7 +32,7 @@ jobs:
       - name: Integrity tests
         run: pytest -q
       - name: Run 60-second stress suite
-        run: python scripts/github_phase2_stress60.py --out reports/stress60
+        run: python scripts/github_phase2_stress60_lowmem.py --out reports/stress60
       - name: Upload stress results
         if: always()
         uses: actions/upload-artifact@v4
