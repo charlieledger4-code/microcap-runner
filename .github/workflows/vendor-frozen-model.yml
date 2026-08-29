@@ -1,0 +1,51 @@
+name: vendor-frozen-livecore-model
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/vendor-frozen-model.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FROZEN_MODEL_RUN_ID: '33256093695'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download immutable frozen bundle
+        run: |
+          rm -rf /tmp/livecore-bundle
+          mkdir -p /tmp/livecore-bundle
+          gh run download "$FROZEN_MODEL_RUN_ID" -R "$GITHUB_REPOSITORY" -n livecore60-models -D /tmp/livecore-bundle
+      - name: Verify manifest hashes before vendoring
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib,sys
+          root=pathlib.Path('/tmp/livecore-bundle')
+          m=json.loads((root/'LIVECORE_MANIFEST.json').read_text())
+          assert m['feature_contract']=='live_core_free_v1'
+          for target,spec in m['targets'].items():
+              p=root/'models'/spec['model_file']
+              h=hashlib.sha256(p.read_bytes()).hexdigest()
+              if h!=spec['model_sha256']:
+                  raise SystemExit(f'hash mismatch {target}: {h}')
+          print('verified',len(m['targets']),'models')
+          PY
+      - name: Commit champion bundle
+        run: |
+          rm -rf models/livecore60_v1
+          mkdir -p models/livecore60_v1
+          cp -R /tmp/livecore-bundle/* models/livecore60_v1/
+          printf '%s\n' 'This directory is immutable live_core_free_v1 champion evidence. Model files are verified against LIVECORE_MANIFEST.json before use.' > models/livecore60_v1/README.md
+          git config user.name 'microcap-research-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add models/livecore60_v1
+          git commit -m 'Vendor immutable live-core v1 champion bundle'
+          git push origin HEAD:main
