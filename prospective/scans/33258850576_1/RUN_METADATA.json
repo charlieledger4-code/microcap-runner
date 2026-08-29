@@ -1,0 +1,10 @@
+{
+  "github_run_id": "33258850576",
+  "github_run_attempt": "1",
+  "github_sha": "e587d904914b4ee823fcdcdafdf69a71bd9111d0",
+  "github_event": "push",
+  "recorded_ms": 1788015469627,
+  "champion_model_path": "models/livecore60_v1",
+  "scanner": "stream_v3",
+  "control_selection": "sha256_random_v1+max_below_q95_v1"
+}
