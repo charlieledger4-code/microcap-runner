@@ -1,0 +1,15 @@
+{
+  "github_run_id": "33261823506",
+  "github_run_attempt": "1",
+  "github_sha": "6357580825301180b0454d88f4b55dbb2b72abde",
+  "github_event": "push",
+  "recorded_ms": 1788019527005,
+  "champion_model_path": "models/livecore60_v1",
+  "scanner": "stream_v4+action_tape_v1",
+  "action_time_policy": "observer_received_plus_60s; immutable before RPC audit",
+  "action_forensics": "action_forensics_v1",
+  "action_forensics_mode": "diagnostic_only",
+  "adversarial_gate": "adv_gate_v1_20260829",
+  "adversarial_gate_mode": "shadow",
+  "control_selection": "sha256_random_all_valid_v2+max_below_q95_v1"
+}
