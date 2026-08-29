@@ -1,0 +1,23 @@
+{
+  "started_ms": 1788015251063,
+  "ended_ms": 1788015365177,
+  "scanner_version": "stream_v3",
+  "rpc": "https://api.mainnet-beta.solana.com",
+  "wss": "wss://api.mainnet-beta.solana.com",
+  "launches": 12,
+  "launch_errors": [],
+  "valid_mints": 4,
+  "invalid_mints": 8,
+  "decisions": {
+    "REJECT": 3,
+    "DATA_INVALID": 8,
+    "WATCH": 1
+  },
+  "direct_log_stats": {
+    "envelopes": 4283,
+    "events": 4292
+  },
+  "median_decision_latency_ms": 45961,
+  "p95_decision_latency_ms": 45961,
+  "guard": "Every observed launch is retained. DATA_INVALID rows are never paper candidates."
+}
