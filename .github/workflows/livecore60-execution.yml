@@ -1,0 +1,47 @@
+name: livecore60-execution
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/github_livecore60_execution.py'
+      - '.github/workflows/livecore60-execution.yml'
+      - 'scripts/github_phase2_stress60.py'
+      - 'scripts/github_phase2_stress60_lowmem.py'
+      - 'scripts/github_livecore60_models.py'
+      - 'requirements.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  execution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      PYTHONPATH: .
+      HF_HUB_DISABLE_XET: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Integrity tests
+        run: pytest -q
+      - name: Run chronological live-core execution stress
+        run: python scripts/github_livecore60_execution.py --out reports/livecore60_execution
+      - name: Upload execution stress
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: livecore60-execution
+          path: |
+            reports/livecore60_execution/EXECUTION_STRESS.json
+            reports/livecore60_execution/execution_headlines.csv
+          if-no-files-found: warn
+          retention-days: 90
