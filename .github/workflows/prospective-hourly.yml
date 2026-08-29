@@ -6,10 +6,12 @@ on:
     paths:
       - '.github/workflows/prospective-hourly.yml'
       - 'scripts/live60_stream_scan_v4.py'
+      - 'scripts/apply_adversarial_gate.py'
       - 'scripts/select_prospective_controls.py'
       - 'src/ingest/pump_log_events.py'
       - 'src/live/feature60.py'
       - 'src/live/feature60_v2.py'
+      - 'src/live/adversarial_gate.py'
       - 'src/live/scoring.py'
       - 'src/execution/pump_curve_quote.py'
       - 'models/livecore60_v1/**'
@@ -46,12 +48,13 @@ jobs:
           pip install -r requirements-frozen-model.txt 'aiohttp>=3.9,<4' 'websockets>=12,<18' pytest
       - name: Scanner integrity tests
         run: |
-          python -m py_compile scripts/live60_stream_scan_v4.py scripts/select_prospective_controls.py
+          python -m py_compile scripts/live60_stream_scan_v4.py scripts/apply_adversarial_gate.py scripts/select_prospective_controls.py
           pytest -q \
             tests/test_pump_trade_event.py \
             tests/test_pump_log_events.py \
             tests/test_live_feature60.py \
             tests/test_live_feature60_v2.py \
+            tests/test_adversarial_gate.py \
             tests/test_live_scoring.py \
             tests/test_dynamic_fees.py \
             tests/test_pump_curve_quote.py
@@ -76,6 +79,11 @@ jobs:
             --sweep-gap-s 2 \
             --rpc-interval .28 \
             --min-accounting-fraction .98
+      - name: Apply action-time adversarial gate in shadow mode
+        run: |
+          python scripts/apply_adversarial_gate.py \
+            --rows reports/prospective_current/scored_rows.jsonl \
+            --mode shadow
       - name: Freeze random and near-miss controls before outcomes
         run: |
           python scripts/select_prospective_controls.py \
@@ -85,6 +93,7 @@ jobs:
         run: |
           python - <<'PY'
           import json,os,time,pathlib
+          from src.live.adversarial_gate import ADVERSARIAL_GATE_VERSION
           p=pathlib.Path('reports/prospective_current/RUN_METADATA.json')
           p.write_text(json.dumps({
             'github_run_id':os.environ['GITHUB_RUN_ID'],
@@ -95,6 +104,8 @@ jobs:
             'champion_model_path':'models/livecore60_v1',
             'scanner':'stream_v4',
             'action_time_policy':'observer_received_plus_60s; immutable before RPC audit',
+            'adversarial_gate':ADVERSARIAL_GATE_VERSION,
+            'adversarial_gate_mode':'shadow',
             'control_selection':'sha256_random_all_valid_v2+max_below_q95_v1'
           },indent=2))
           PY
