@@ -1,10 +1,9 @@
-from datetime import datetime, timezone
 import pytest
 
 from src.execution.dynamic_fees import (
-    DYNAMIC_FEE_ACTIVATION, DynamicFeeConfigRequired, FeeTier, FeesBps,
+    DynamicFeeConfigRequired, FeeTier, FeesBps,
     bonding_curve_market_cap_lamports, pumpswap_market_cap_lamports,
-    calculate_fee_tier, effective_curve_fees,
+    calculate_fee_tier, effective_curve_fees, effective_pumpswap_fees,
 )
 
 
@@ -33,11 +32,22 @@ def test_fee_tier_matches_published_highest_threshold_rule():
     assert calculate_fee_tier(tiers,5000).total_bps==80
 
 
-def test_post_activation_fee_config_is_fail_closed():
-    before=DYNAMIC_FEE_ACTIVATION.replace(hour=19)
-    assert effective_curve_fees(observed_at=before).total_bps==125
+def test_current_curve_fee_is_flat_125_bps():
+    got=effective_curve_fees()
+    assert got.protocol_fee_bps==95
+    assert got.creator_fee_bps==30
+    assert got.lp_fee_bps==0
+    assert got.total_bps==125
+
+
+def test_pumpswap_noncanonical_is_flat_and_canonical_is_fail_closed_without_tiers():
+    flat=effective_pumpswap_fees(canonical=False)
+    assert flat.protocol_fee_bps==5
+    assert flat.creator_fee_bps==0
+    assert flat.lp_fee_bps==25
+    assert flat.total_bps==30
     with pytest.raises(DynamicFeeConfigRequired):
-        effective_curve_fees(observed_at=DYNAMIC_FEE_ACTIVATION)
-    tiers=[FeeTier(0,FeesBps(90,10,0))]
-    got=effective_curve_fees(observed_at=DYNAMIC_FEE_ACTIVATION,market_cap_lamports=1,fee_tiers=tiers)
-    assert got.total_bps==100
+        effective_pumpswap_fees(canonical=True)
+    tiers=[FeeTier(0,FeesBps(93,30,2)),FeeTier(420_000_000_000,FeesBps(5,95,20))]
+    got=effective_pumpswap_fees(canonical=True,market_cap_lamports=500_000_000_000,fee_tiers=tiers)
+    assert got.total_bps==120
