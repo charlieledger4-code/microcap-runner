@@ -5,41 +5,54 @@ on:
     branches: [main]
     paths:
       - 'scripts/live60_onchain_probe_v2.py'
+      - 'scripts/score_live_batch.py'
       - 'src/ingest/pump_trade_event.py'
       - 'src/live/feature60.py'
+      - 'src/live/scoring.py'
       - '.github/workflows/live60-onchain-probe.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       PYTHONPATH: .
       SOLANA_RPC_URL: https://api.mainnet-beta.solana.com
+      GH_TOKEN: ${{ github.token }}
+      FROZEN_MODEL_RUN_ID: '33256093695'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install probe dependencies
-        run: pip install 'aiohttp>=3.9' 'websockets>=12' pytest
-      - name: Decoder and feature tests
-        run: pytest -q tests/test_pump_trade_event.py tests/test_live_feature60.py
-      - name: Run completeness-gated prospective on-chain probe
-        run: python scripts/live60_onchain_probe_v2.py --out reports/live60_onchain_v2 --collect-s 20 --max-mints 2 --age-s 60 --grace-s 10 --tx-limit 300 --sweeps 3 --sweep-gap-s 3 --rpc-interval .28 --min-fetch-fraction .98
-      - name: Upload probe evidence
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Decoder, feature and scoring tests
+        run: pytest -q tests/test_pump_trade_event.py tests/test_live_feature60.py tests/test_live_scoring.py
+      - name: Run completeness-gated prospective on-chain batch
+        run: python scripts/live60_onchain_probe_v2.py --out reports/live60_onchain_v2 --collect-s 45 --max-mints 5 --age-s 60 --grace-s 10 --tx-limit 300 --sweeps 3 --sweep-gap-s 3 --rpc-interval .28 --min-fetch-fraction .98
+      - name: Download immutable live-core model bundle
+        run: gh run download "$FROZEN_MODEL_RUN_ID" -R "$GITHUB_REPOSITORY" -n livecore60-models -D .modelbundle
+      - name: Score only completeness-valid rows
+        run: python scripts/score_live_batch.py --features reports/live60_onchain_v2/feature_rows.jsonl --bundle .modelbundle --out reports/live60_onchain_v2/scored_rows.jsonl --model-run-id "$FROZEN_MODEL_RUN_ID"
+      - name: Upload prospective evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: live60-onchain-probe-v2
+          name: live60-onchain-scored-batch
           path: |
             reports/live60_onchain_v2/SUMMARY.json
+            reports/live60_onchain_v2/SCORE_SUMMARY.json
             reports/live60_onchain_v2/launches.jsonl
             reports/live60_onchain_v2/feature_rows.jsonl
+            reports/live60_onchain_v2/scored_rows.jsonl
             reports/live60_onchain_v2/sweep_audit.jsonl
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 30
