@@ -1,0 +1,32 @@
+name: audit-pump-event-logs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/audit_pump_event_logs.py'
+      - '.github/workflows/audit-pump-event-logs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PYTHONPATH: .
+      SOLANA_RPC_URL: https://api.mainnet-beta.solana.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install 'aiohttp>=3.9'
+      - run: python scripts/audit_pump_event_logs.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pump-event-log-audit
+          path: event_log_audit.json
+          retention-days: 14
