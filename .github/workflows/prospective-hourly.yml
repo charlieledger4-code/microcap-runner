@@ -6,11 +6,14 @@ on:
     paths:
       - '.github/workflows/prospective-hourly.yml'
       - 'scripts/live60_stream_scan_v4.py'
+      - 'scripts/live60_stream_scan_v5.py'
+      - 'scripts/annotate_action_forensics.py'
       - 'scripts/apply_adversarial_gate.py'
       - 'scripts/select_prospective_controls.py'
       - 'src/ingest/pump_log_events.py'
       - 'src/live/feature60.py'
       - 'src/live/feature60_v2.py'
+      - 'src/live/action_forensics.py'
       - 'src/live/adversarial_gate.py'
       - 'src/live/scoring.py'
       - 'src/execution/pump_curve_quote.py'
@@ -48,12 +51,13 @@ jobs:
           pip install -r requirements-frozen-model.txt 'aiohttp>=3.9,<4' 'websockets>=12,<18' pytest
       - name: Scanner integrity tests
         run: |
-          python -m py_compile scripts/live60_stream_scan_v4.py scripts/apply_adversarial_gate.py scripts/select_prospective_controls.py
+          python -m py_compile scripts/live60_stream_scan_v4.py scripts/live60_stream_scan_v5.py scripts/annotate_action_forensics.py scripts/apply_adversarial_gate.py scripts/select_prospective_controls.py
           pytest -q \
             tests/test_pump_trade_event.py \
             tests/test_pump_log_events.py \
             tests/test_live_feature60.py \
             tests/test_live_feature60_v2.py \
+            tests/test_action_forensics.py \
             tests/test_adversarial_gate.py \
             tests/test_live_scoring.py \
             tests/test_dynamic_fees.py \
@@ -65,10 +69,10 @@ jobs:
           s=LiveCoreScorer('models/livecore60_v1')
           print('verified feature contract:',s.manifest['feature_contract'])
           PY
-      - name: Run prospective WebSocket-first action/audit scan
+      - name: Run prospective WebSocket-first action/audit scan and persist action tape
         run: |
           rm -rf reports/prospective_current
-          python scripts/live60_stream_scan_v4.py \
+          python scripts/live60_stream_scan_v5.py \
             --out reports/prospective_current \
             --bundle models/livecore60_v1 \
             --collect-s 30 \
@@ -79,6 +83,11 @@ jobs:
             --sweep-gap-s 2 \
             --rpc-interval .28 \
             --min-accounting-fraction .98
+      - name: Add action-time coordination forensics
+        run: |
+          python scripts/annotate_action_forensics.py \
+            --rows reports/prospective_current/scored_rows.jsonl \
+            --tapes reports/prospective_current/action_trade_tapes.jsonl
       - name: Apply action-time adversarial gate in shadow mode
         run: |
           python scripts/apply_adversarial_gate.py \
@@ -94,6 +103,7 @@ jobs:
           python - <<'PY'
           import json,os,time,pathlib
           from src.live.adversarial_gate import ADVERSARIAL_GATE_VERSION
+          from src.live.action_forensics import FORENSICS_VERSION
           p=pathlib.Path('reports/prospective_current/RUN_METADATA.json')
           p.write_text(json.dumps({
             'github_run_id':os.environ['GITHUB_RUN_ID'],
@@ -102,8 +112,10 @@ jobs:
             'github_event':os.environ['GITHUB_EVENT_NAME'],
             'recorded_ms':int(time.time()*1000),
             'champion_model_path':'models/livecore60_v1',
-            'scanner':'stream_v4',
+            'scanner':'stream_v4+action_tape_v1',
             'action_time_policy':'observer_received_plus_60s; immutable before RPC audit',
+            'action_forensics':FORENSICS_VERSION,
+            'action_forensics_mode':'diagnostic_only',
             'adversarial_gate':ADVERSARIAL_GATE_VERSION,
             'adversarial_gate_mode':'shadow',
             'control_selection':'sha256_random_all_valid_v2+max_below_q95_v1'
