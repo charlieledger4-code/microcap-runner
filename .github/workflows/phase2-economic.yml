@@ -1,0 +1,47 @@
+name: phase2-economic-tail
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/github_phase2_economic.py'
+      - '.github/workflows/phase2-economic.yml'
+      - 'requirements.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  economic-tail:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      PYTHONPATH: .
+      HF_HUB_DISABLE_XET: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Bootstrap integrity tests
+        run: pytest -q
+      - name: Run full lifecycle economic-tail study
+        run: |
+          python scripts/github_phase2_economic.py --out reports/economic_phase2
+      - name: Upload compact economic results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2-economic-results
+          path: |
+            reports/economic_phase2/corpus_audit.json
+            reports/economic_phase2/economic_metrics.json
+            reports/economic_phase2/economic_metrics_partial.json
+            reports/economic_phase2/headline_enrichment.csv
+          if-no-files-found: warn
+          retention-days: 14
