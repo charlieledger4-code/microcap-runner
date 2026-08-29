@@ -9,7 +9,13 @@ from datetime import datetime, timezone
 from typing import Any, Iterable
 import math
 
-from src.ingest.pump_trade_event import PumpTradeEvent, SYSTEM_PROGRAM
+from src.ingest.pump_trade_event import PumpTradeEvent, SYSTEM_PROGRAM, WSOL_MINT
+
+# The Slinky historical corpus explicitly identifies this protocol/system wallet
+# as non-human. It must be excluded live too or the model sees a different actor
+# definition than it saw historically (especially on mayhem-mode launches).
+SLINKY_SYSTEM_WALLET = 'BwWK17cbHxwWBKZkUYvzxLcNQ1YVyaFezduWbtm2de6s'
+NON_HUMAN_WALLETS = {SYSTEM_PROGRAM, SLINKY_SYSTEM_WALLET}
 
 LIVECORE_FEATURES = [
     'human_trades','buys','sells','unique_wallets','unique_buyers','unique_sellers',
@@ -31,18 +37,35 @@ def _f(x, default=None):
         return default
 
 
+def _native_sol_quote(ev: PumpTradeEvent) -> bool:
+    # Current Pump v2 native-SOL events use the System Program pubkey as a quote
+    # sentinel; older events had no quote_mint and some tooling may surface WSOL.
+    return ev.quote_mint in (None, SYSTEM_PROGRAM, WSOL_MINT)
+
+
+def _event_price_sol(ev: PumpTradeEvent) -> float | None:
+    if not _native_sol_quote(ev) or ev.virtual_token_reserves_raw <= 0:
+        return None
+    quote_raw=ev.virtual_quote_reserves_raw or ev.virtual_sol_reserves_raw
+    if quote_raw <= 0:return None
+    quote_sol=quote_raw/1e9
+    token_units=ev.virtual_token_reserves_raw/1e6
+    return quote_sol/token_units if token_units else None
+
+
 def event_to_trade(ev: PumpTradeEvent, launch_unix_s: float) -> dict[str, Any] | None:
-    if not ev.is_sol_quote:
+    if not _native_sol_quote(ev):
         return None
     sec=(ev.source_block_time if ev.source_block_time is not None else ev.timestamp)-launch_unix_s
+    price=_event_price_sol(ev)
     return {
         'signature':ev.source_signature,
         'user_wallet':ev.user,
         'is_buy':bool(ev.is_buy),
         'sol_amount':ev.sol_amount,
         'token_amount':ev.token_amount,
-        'price_sol':ev.price_sol,
-        'market_cap_sol':ev.market_cap_sol,
+        'price_sol':price,
+        'market_cap_sol':price*1_000_000_000 if price is not None else None,
         'seconds_since_launch':float(sec),
         'ix_name':ev.ix_name,
     }
@@ -90,7 +113,7 @@ def build_livecore_features(launch: dict[str, Any], trades: Iterable[dict[str, A
         sec=_f(x.get('seconds_since_launch'))
         if sec is None or sec < 0 or sec > decision_age_s: continue
         user=str(x.get('user_wallet') or '')
-        human=user != SYSTEM_PROGRAM
+        human=user not in NON_HUMAN_WALLETS
         sol=_f(x.get('sol_amount'),0.0) or 0.0; tok=_f(x.get('token_amount'),0.0) or 0.0; p=_f(x.get('price_sol'))
         valid=bool(human and sol>0 and tok>0 and p and p>0 and .01 <= sol/(tok*p) <= 100)
         rows.append({**x,'seconds_since_launch':sec,'user_wallet':user,'human':human,'sol_amount':sol,'token_amount':tok,'price_sol':p,'valid_sol':valid})
