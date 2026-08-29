@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Track matured prospective candidate/control outcomes from the evidence ledger.
+"""Track matured prospective candidate/WATCH/control outcomes from the ledger.
 
-Only clean stream-v4 rows selected before outcomes are eligible:
+Eligible rows are selected before outcomes:
 - PAPER_CANDIDATE / PAPER_PRIORITY
+- WATCH (for Q95 threshold calibration)
 - deterministic random control
 - deterministic near-miss control
 
-History is reconstructed from Solana transactions, Pump TradeEvents and PumpSwap
-events. A capped/incomplete history produces OUTCOME_INCOMPLETE and no flattering
-first-passage claim.
+Champion decisions, shadow adversarial-gate recommendations and action-time
+forensics are carried into outcome records unchanged. History is reconstructed
+from Solana transactions, Pump TradeEvents and PumpSwap events. A capped or
+incomplete history produces OUTCOME_INCOMPLETE and no performance claim.
 """
 from __future__ import annotations
 
@@ -90,12 +92,11 @@ def eligible(row):
     # performance denominator, even if their JSON happens to contain controls.
     if row.get('scanner_version')!='stream_v4' or row.get('data_status')!='VALID':return False
     controls=row.get('prospective_controls') or {}
-    return row.get('decision') in ('PAPER_PRIORITY','PAPER_CANDIDATE') or bool(controls.get('random_control')) or bool(controls.get('near_miss_control'))
+    return row.get('decision') in ('PAPER_PRIORITY','PAPER_CANDIDATE','WATCH') or bool(controls.get('random_control')) or bool(controls.get('near_miss_control'))
 
 
 def scan_rows(ledger:Path,horizon_s:int,now_ms:int):
-    found=[]
-    root=ledger/'prospective'/'scans'
+    found=[];root=ledger/'prospective'/'scans'
     for p in sorted(root.glob('*/scored_rows.jsonl')) if root.exists() else []:
         scan_id=p.parent.name
         for line in p.read_text().splitlines():
@@ -142,21 +143,27 @@ async def track_one(session,pacer,row,horizon_s,max_pages,max_txs,entry_network_
     summary=summarize_executable_path(points)
     return {
         'status':'COMPLETE' if complete else 'OUTCOME_INCOMPLETE','scanner_version':row.get('scanner_version'),'mint':mint,'name':row.get('name'),'symbol':row.get('symbol'),
-        'horizon_s':horizon_s,'scored_ms':scored_ms,'cutoff_ms':int(end_s*1000),'decision':row.get('decision'),'audit_decision':row.get('audit_decision'),
-        'prospective_controls':row.get('prospective_controls'),'entry':{'quote_source':'action_time_last_observed_pump_state','gross_quote_in_raw':gross,'tokens_owned_raw':tokens,'average_price_sol':entry_avg,'entry_network_lamports':entry_network_lamports,'entry_total_outlay_sol':entry_total,'account_rent_included':False},
+        'horizon_s':horizon_s,'scored_ms':scored_ms,'cutoff_ms':int(end_s*1000),
+        'decision':row.get('decision'),'audit_decision':row.get('audit_decision'),'gated_decision':row.get('gated_decision'),'operational_paper_decision':row.get('operational_paper_decision'),
+        'adversarial_gate':row.get('adversarial_gate'),'action_forensics':row.get('action_forensics'),'prospective_controls':row.get('prospective_controls'),
+        'entry':{
+            'quote_source':'action_time_last_observed_pump_state','gross_quote_in_raw':gross,'tokens_owned_raw':tokens,'average_price_sol':entry_avg,
+            'entry_network_lamports':entry_network_lamports,'entry_total_outlay_sol':entry_total,'account_rent_included':False,
+            'curve_fee_source':q.get('fee_source'),'curve_total_fee_bps':q.get('total_fee_bps'),'curve_protocol_fee_bps':q.get('protocol_fee_bps'),'curve_creator_fee_bps':q.get('creator_fee_bps'),'curve_cashback_fee_bps':q.get('cashback_fee_bps'),
+        },
         'migration':{'observed':pool is not None,'pool':pool.pool if pool else None,'timestamp':pool.timestamp if pool else None},
         'history_quality':{'pump':mhist,'pump_tx_errors':mtxerr,'pump_tx_truncated':mtrunc,'pumpswap':phist,'pumpswap_tx_errors':ptxerr,'pumpswap_tx_truncated':ptrunc},
         'events':{'pump_trade_events':len(pump_events),'pumpswap_trade_events':len(swap_events),'execution_points':len(points)},
         'outcome':summary if complete else None,'diagnostic_outcome_even_if_incomplete':summary,
-        'guard':'Only status COMPLETE is valid for prospective performance statistics. Account-rent capital and unknown priority/Jito costs are not yet included.',
+        'guard':'Only status COMPLETE is valid for prospective statistics. Champion and gate decisions remain separate. Account-rent capital and unknown priority/Jito costs are not yet included.',
     }
 
 async def main_async(a):
     ledger=Path(a.ledger_root);now_ms=int(time.time()*1000);todo=scan_rows(ledger,a.horizon_s,now_ms);pacer=Pacer(a.rpc_interval);results=[]
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30),headers={'User-Agent':'microcap-runner-outcomes/0.2'}) as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30),headers={'User-Agent':'microcap-runner-outcomes/0.3'}) as session:
         for scan_id,row,out in todo[:a.max_rows]:
             res=await track_one(session,pacer,row,a.horizon_s,a.max_pages,a.max_txs,a.entry_network_lamports,a.exit_network_lamports)
-            out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(res,indent=2));results.append({'scan_id':scan_id,'mint':row['mint'],'path':str(out),'status':res['status']})
+            out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(res,indent=2));results.append({'scan_id':scan_id,'mint':row['mint'],'path':str(out),'status':res['status'],'decision':row.get('decision'),'gated_decision':row.get('gated_decision')})
     print(json.dumps({'horizon_s':a.horizon_s,'eligible_pending':len(todo),'processed':len(results),'results':results},indent=2))
 
 def main():
