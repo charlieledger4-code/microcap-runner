@@ -10,7 +10,7 @@ def state():
         real_token_reserves_raw=700_000_000_000_000,
         real_quote_reserves_raw=10_000_000_000,
         protocol_fee_bps=95,creator_fee_bps=30,cashback_fee_bps=0,
-        source_signature='s',
+        source_signature='s',fee_source='test_explicit_fee_state',
     )
 
 
@@ -22,10 +22,12 @@ def test_buy_matches_published_budget_formula_and_caps_reserves():
     assert q.swap_quote_in_raw==swap
     assert q.tokens_out_raw==expected
     assert q.total_fee_bps==125
+    assert q.protocol_fee_bps==95 and q.creator_fee_bps==30
+    assert q.fee_source=='test_explicit_fee_state'
     assert q.average_price_sol>0 and q.price_impact_bps>0
 
 
-def test_sell_fees_round_up_per_component():
+def test_sell_fees_round_up_per_component_and_preserve_source():
     s=state();tokens=1_000_000_000_000
     q=quote_sell_tokens_raw(s,tokens)
     raw=(tokens*s.virtual_quote_reserves_raw)//(s.virtual_token_reserves_raw+tokens)
@@ -33,6 +35,7 @@ def test_sell_fees_round_up_per_component():
     assert q.protocol_fee_raw==ceil_div(raw*95,10_000)
     assert q.creator_fee_raw==ceil_div(raw*30,10_000)
     assert q.net_quote_out_raw==raw-q.protocol_fee_raw-q.creator_fee_raw
+    assert q.fee_source=='test_explicit_fee_state'
 
 
 def test_small_round_trip_loses_fees_and_price_impact():
@@ -41,3 +44,4 @@ def test_small_round_trip_loses_fees_and_price_impact():
     assert sell.net_quote_out_raw < buy.gross_quote_in_raw
     assert after.virtual_token_reserves_raw < s.virtual_token_reserves_raw
     assert after.virtual_quote_reserves_raw > s.virtual_quote_reserves_raw
+    assert after.fee_source==s.fee_source
