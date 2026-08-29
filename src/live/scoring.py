@@ -1,7 +1,9 @@
 """Load and score an immutable live-core model bundle.
 
-Raw classifier outputs are ranking scores, not probabilities.  The only built-in
-labels correspond to frozen training-population score quantiles from the manifest.
+Raw classifier outputs are ranking scores, not probabilities. The live operational
+rule was frozen after historical walk-forward testing and before any prospective
+outcome labels: 10x is the sole PAPER_CANDIDATE gate; 25x is a secondary WATCH
+diagnostic; 100x remains diagnostic-only because its live-core folds were unstable.
 """
 from __future__ import annotations
 from pathlib import Path
@@ -51,15 +53,21 @@ class LiveCoreScorer:
             s=float(model.predict_proba(frame)[:,1][0]);spec=self.manifest['targets'][target]
             scores[target]={'score':s,'tier':score_tier(s,spec['score_thresholds']),'thresholds':spec['score_thresholds']}
         primary=scores.get('10',{}).get('tier','BELOW_Q95')
-        tail=scores.get('100',{}).get('tier','BELOW_Q95')
-        # Paper-only operational flag. It intentionally does not imply expected
-        # profitability or a calibrated probability.
+        secondary=scores.get('25',{}).get('tier','BELOW_Q95')
+        # Pre-registered paper-only rule. The 10x Q99 threshold corresponds to
+        # the exact top-1% ranking regime tested historically; Q995/Q999 are
+        # priority subtiers, not separately claimed performance estimates.
         if primary in ('Q999','Q995'):
             decision='PAPER_PRIORITY'
         elif primary=='Q99':
             decision='PAPER_CANDIDATE'
-        elif primary=='Q95' or tail in ('Q999','Q995','Q99'):
+        elif primary=='Q95' or secondary in ('Q999','Q995','Q99'):
             decision='WATCH'
         else:
             decision='REJECT'
-        return {'decision':decision,'primary_target':'10x','tail_target':'100x','scores':scores,'model_contract':self.manifest['feature_contract']}
+        return {
+            'decision':decision,'primary_target':'10x','secondary_target':'25x',
+            'diagnostic_only_targets':['5x','100x'],'scores':scores,
+            'model_contract':self.manifest['feature_contract'],
+            'rule_version':'live_core_rule_v2_preprospective',
+        }
