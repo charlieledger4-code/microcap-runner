@@ -67,13 +67,10 @@ def normalize_trades(launch: dict[str, Any], events: Iterable[PumpTradeEvent], l
         if ev.mint != launch.get('mint'): continue
         t=event_to_trade(ev,launch_unix_s)
         if t is not None: out.append(t)
-    # Creation can include a TradeEvent. Only synthesize the free launch-feed
-    # initial buy if that signature was not decoded, avoiding double counting.
     sig=launch.get('signature')
     if not any(t.get('signature')==sig for t in out):
         t=launch_initial_trade(launch)
         if t is not None: out.append(t)
-    # Defensive event deduplication.
     dedup={}
     for t in out:
         key=(t.get('signature'),t.get('user_wallet'),t.get('is_buy'),round(_f(t.get('sol_amount'),0.0),12),round(_f(t.get('token_amount'),0.0),6))
@@ -127,7 +124,7 @@ def build_livecore_features(launch: dict[str, Any], trades: Iterable[dict[str, A
         'creator_buy_volume_sol':sum(x['sol_amount'] for x in vb if x['user_wallet']==creator),
         'initial_buy_sol':_f(launch.get('solAmount'),0.0) or 0.0,
         'is_mayhem_mode':int(bool(launch.get('is_mayhem_mode',False))),
-        'hour_utc':dt.hour,'dow_utc':dt.weekday(),
+        'hour_utc':dt.hour,'dow_utc':(dt.weekday()+1)%7,
     }
     row['buy_sell_volume_ratio']=row['buy_volume_sol']/(row['sell_volume_sol']+.01)
     row['tx_acceleration']=(row['recent_trades']-row['prior_trades'])/(row['prior_trades']+1.0)
