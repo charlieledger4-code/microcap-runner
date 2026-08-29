@@ -1,0 +1,37 @@
+name: live-launch-probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/pumpportal_launch_probe.py'
+      - '.github/workflows/live-launch-probe.yml'
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Capture seconds (10-1800)'
+        required: true
+        default: '300'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install 'websockets>=12'
+      - name: Capture public launch events
+        run: python scripts/pumpportal_launch_probe.py --duration "${{ github.event.inputs.duration || '300' }}" --out reports/live_probe/pumpportal_events.jsonl
+      - name: Upload append-only probe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-launch-probe
+          path: reports/live_probe/**
+          retention-days: 14
