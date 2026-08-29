@@ -25,6 +25,7 @@ from src.live.executable_outcomes import pump_exit_points,pumpswap_exit_points,s
 
 RPC=os.environ.get('SOLANA_RPC_URL','https://api.mainnet-beta.solana.com')
 LAMPORTS=1_000_000_000
+MIN_CURRENT_CURVE_FEE_BPS=125
 
 class Pacer:
     def __init__(self,interval=.28):self.interval=interval;self.lock=asyncio.Lock();self.next_at=0.0
@@ -88,8 +89,6 @@ async def fetch_transactions(session,pacer,sigs,max_txs):
 
 
 def eligible(row):
-    # Hard boundary: development scans from v1-v3 never enter the prospective
-    # performance denominator, even if their JSON happens to contain controls.
     if row.get('scanner_version')!='stream_v4' or row.get('data_status')!='VALID':return False
     controls=row.get('prospective_controls') or {}
     return row.get('decision') in ('PAPER_PRIORITY','PAPER_CANDIDATE','WATCH') or bool(controls.get('random_control')) or bool(controls.get('near_miss_control'))
@@ -114,7 +113,15 @@ async def track_one(session,pacer,row,horizon_s,max_pages,max_txs,entry_network_
     mint=row['mint'];scored_ms=int(row['scored_ms']);end_s=scored_ms/1000+horizon_s
     q=row.get('paper_curve_quote') or {};tokens=int(q.get('tokens_out_raw') or 0);gross=int(q.get('gross_quote_in_raw') or 0);entry_avg=q.get('average_price_sol')
     if tokens<=0 or gross<=0 or not entry_avg:
-        return {'status':'OUTCOME_INCOMPLETE','reason':'missing_action_time_curve_quote','mint':mint,'horizon_s':horizon_s}
+        return {'status':'OUTCOME_INCOMPLETE','reason':'missing_action_time_curve_quote','mint':mint,'horizon_s':horizon_s,'decision':row.get('decision')}
+    try:entry_fee_bps=float(q.get('total_fee_bps') or 0)
+    except (TypeError,ValueError):entry_fee_bps=0
+    if entry_fee_bps < MIN_CURRENT_CURVE_FEE_BPS:
+        return {
+            'status':'OUTCOME_INCOMPLETE','reason':'quarantined_unvalidated_entry_curve_fee','mint':mint,'horizon_s':horizon_s,
+            'decision':row.get('decision'),'recorded_entry_fee_bps':entry_fee_bps,'required_min_fee_bps':MIN_CURRENT_CURVE_FEE_BPS,
+            'guard':'Original scan is preserved; this entry quote predates/fails the corrected fee floor and cannot enter executable P&L statistics.',
+        }
     entry_total=(gross+entry_network_lamports)/LAMPORTS;start_s=max(0,scored_ms/1000-120)
     msigs,mhist=await signatures_window(session,pacer,mint,start_s,end_s,max_pages)
     mtx,mtxerr,mtrunc=await fetch_transactions(session,pacer,msigs,max_txs)
@@ -160,10 +167,10 @@ async def track_one(session,pacer,row,horizon_s,max_pages,max_txs,entry_network_
 
 async def main_async(a):
     ledger=Path(a.ledger_root);now_ms=int(time.time()*1000);todo=scan_rows(ledger,a.horizon_s,now_ms);pacer=Pacer(a.rpc_interval);results=[]
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30),headers={'User-Agent':'microcap-runner-outcomes/0.3'}) as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30),headers={'User-Agent':'microcap-runner-outcomes/0.4'}) as session:
         for scan_id,row,out in todo[:a.max_rows]:
             res=await track_one(session,pacer,row,a.horizon_s,a.max_pages,a.max_txs,a.entry_network_lamports,a.exit_network_lamports)
-            out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(res,indent=2));results.append({'scan_id':scan_id,'mint':row['mint'],'path':str(out),'status':res['status'],'decision':row.get('decision'),'gated_decision':row.get('gated_decision')})
+            out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(res,indent=2));results.append({'scan_id':scan_id,'mint':row['mint'],'path':str(out),'status':res['status'],'reason':res.get('reason'),'decision':row.get('decision'),'gated_decision':row.get('gated_decision')})
     print(json.dumps({'horizon_s':a.horizon_s,'eligible_pending':len(todo),'processed':len(results),'results':results},indent=2))
 
 def main():
