@@ -1,23 +1,25 @@
-"""Versioned Pump/PumpSwap fee math for paper execution.
+"""Current Pump/PumpSwap fee math for paper execution.
 
-Pump has announced a dynamic market-cap-tier fee regime effective 2026-09-01
-20:00 UTC.  The tier values are deliberately *not* hard-coded here: the live
-system should consume a contemporaneous on-chain/SDK fee-config snapshot so a
-future tier update cannot silently stale the simulator.
+Current public Pump documentation (last updated 2026-05-20) specifies:
+- Pump bonding curves: flat 1.25% total fee = 0.95% protocol + 0.30% creator.
+- Canonical PumpSwap pools: market-cap-tier fees.
+- Non-canonical PumpSwap pools: flat 0.30% total = 0.05% protocol + 0.25% LP.
 
-The algorithms below mirror Pump's published SDK/reference logic:
-- bonding-curve market cap = virtual_quote_reserves * mint_supply / virtual_token_reserves
-- canonical PumpSwap market cap = quote_reserve * base_supply / base_reserve
-- choose first tier below first threshold, otherwise highest threshold <= market cap.
+The market-cap formulas and tier selection below mirror Pump's published SDK/
+reference logic. Canonical PumpSwap callers must provide a contemporaneous tier
+snapshot rather than silently assuming stale tiers.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Iterable
 
-DYNAMIC_FEE_ACTIVATION = datetime(2026, 9, 1, 20, 0, 0, tzinfo=timezone.utc)
-LEGACY_PUMP_TOTAL_FEE_BPS = 125.0
+PUMP_CURVE_PROTOCOL_FEE_BPS = 95.0
+PUMP_CURVE_CREATOR_FEE_BPS = 30.0
+PUMP_CURVE_TOTAL_FEE_BPS = 125.0
+PUMPSWAP_NONCANONICAL_PROTOCOL_FEE_BPS = 5.0
+PUMPSWAP_NONCANONICAL_LP_FEE_BPS = 25.0
 
 
 class DynamicFeeConfigRequired(RuntimeError):
@@ -82,26 +84,40 @@ def calculate_fee_tier(tiers: Iterable[FeeTier], market_cap_lamports: int) -> Fe
     return rows[0].fees
 
 
-def effective_curve_fees(
+def effective_curve_fees(*, observed_at: datetime | None = None) -> FeesBps:
+    """Return the current documented Pump bonding-curve fee split.
+
+    ``observed_at`` is retained for audit metadata/API compatibility; current
+    public docs do not describe a future activation switch for the curve fee.
+    """
+    return FeesBps(
+        protocol_fee_bps=PUMP_CURVE_PROTOCOL_FEE_BPS,
+        creator_fee_bps=PUMP_CURVE_CREATOR_FEE_BPS,
+        lp_fee_bps=0.0,
+    )
+
+
+def effective_pumpswap_fees(
     *,
-    observed_at: datetime,
+    canonical: bool,
     market_cap_lamports: int | None = None,
     fee_tiers: Iterable[FeeTier] | None = None,
-    legacy_total_fee_bps: float = LEGACY_PUMP_TOTAL_FEE_BPS,
 ) -> FeesBps:
-    """Return fee assumptions valid at ``observed_at``.
+    """Return current PumpSwap fees.
 
-    Before activation the public legacy total is returned as a single protocol
-    bucket for execution accounting. After activation, absence of a tier snapshot
-    is a hard error: callers may not silently carry the 1.25% flat fee forward.
+    Non-canonical pools use the documented flat 0.30% schedule. Canonical pools
+    require the current market cap and contemporaneous fee-tier configuration;
+    missing tier data is a hard error so execution estimates cannot silently use
+    stale market-cap bands.
     """
-    if observed_at.tzinfo is None:
-        raise ValueError("observed_at must be timezone-aware")
-    at = observed_at.astimezone(timezone.utc)
-    if at < DYNAMIC_FEE_ACTIVATION:
-        return FeesBps(protocol_fee_bps=float(legacy_total_fee_bps), creator_fee_bps=0.0, lp_fee_bps=0.0)
+    if not canonical:
+        return FeesBps(
+            protocol_fee_bps=PUMPSWAP_NONCANONICAL_PROTOCOL_FEE_BPS,
+            creator_fee_bps=0.0,
+            lp_fee_bps=PUMPSWAP_NONCANONICAL_LP_FEE_BPS,
+        )
     if market_cap_lamports is None or fee_tiers is None:
         raise DynamicFeeConfigRequired(
-            "dynamic Pump fees active: contemporaneous market cap and fee tiers are required"
+            "canonical PumpSwap fees require contemporaneous market cap and fee tiers"
         )
     return calculate_fee_tier(fee_tiers, int(market_cap_lamports))
