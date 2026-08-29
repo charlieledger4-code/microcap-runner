@@ -1,0 +1,101 @@
+name: prospective-hourly-live60
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prospective-live60-ledger
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: .
+      SOLANA_RPC_URL: https://api.mainnet-beta.solana.com
+      SOLANA_WSS_URL: wss://api.mainnet-beta.solana.com
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install frozen scanner runtime
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-frozen-model.txt 'aiohttp>=3.9,<4' 'websockets>=12,<18' pytest
+      - name: Scanner integrity tests
+        run: |
+          pytest -q \
+            tests/test_pump_trade_event.py \
+            tests/test_pump_log_events.py \
+            tests/test_live_feature60.py \
+            tests/test_live_feature60_v2.py \
+            tests/test_live_scoring.py \
+            tests/test_dynamic_fees.py
+      - name: Verify vendored champion model hashes
+        run: |
+          python - <<'PY'
+          from src.live.scoring import LiveCoreScorer
+          s=LiveCoreScorer('models/livecore60_v1')
+          print('verified feature contract:',s.manifest['feature_contract'])
+          PY
+      - name: Run prospective WebSocket-first scan
+        run: |
+          rm -rf reports/prospective_current
+          python scripts/live60_stream_scan.py \
+            --out reports/prospective_current \
+            --bundle models/livecore60_v1 \
+            --collect-s 30 \
+            --max-mints 12 \
+            --age-s 60 \
+            --grace-ms 800 \
+            --sweeps 3 \
+            --sweep-gap-s 1.5 \
+            --rpc-interval .22 \
+            --min-accounting-fraction .98
+      - name: Add immutable run metadata
+        run: |
+          python - <<'PY'
+          import json,os,time,pathlib
+          p=pathlib.Path('reports/prospective_current/RUN_METADATA.json')
+          p.write_text(json.dumps({
+            'github_run_id':os.environ['GITHUB_RUN_ID'],
+            'github_run_attempt':os.environ['GITHUB_RUN_ATTEMPT'],
+            'github_sha':os.environ['GITHUB_SHA'],
+            'github_event':os.environ['GITHUB_EVENT_NAME'],
+            'recorded_ms':int(time.time()*1000),
+            'champion_model_path':'models/livecore60_v1',
+            'scanner':'stream_v3'
+          },indent=2))
+          PY
+      - name: Upload scan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prospective-live60-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/prospective_current/**
+          if-no-files-found: error
+          retention-days: 90
+      - name: Append scan to prospective-ledger branch
+        run: |
+          payload="/tmp/scan-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -rf "$payload" /tmp/prospective-ledger-wt
+          mkdir -p "$payload"
+          cp -R reports/prospective_current/. "$payload/"
+          git fetch origin prospective-ledger
+          git worktree add /tmp/prospective-ledger-wt origin/prospective-ledger
+          dest="/tmp/prospective-ledger-wt/prospective/scans/${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$dest"
+          cp -R "$payload/." "$dest/"
+          git -C /tmp/prospective-ledger-wt config user.name 'microcap-research-bot'
+          git -C /tmp/prospective-ledger-wt config user.email 'actions@users.noreply.github.com'
+          git -C /tmp/prospective-ledger-wt add "prospective/scans/${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          git -C /tmp/prospective-ledger-wt commit -m "Prospective live60 scan ${GITHUB_RUN_ID}/${GITHUB_RUN_ATTEMPT}"
+          git -C /tmp/prospective-ledger-wt push origin HEAD:prospective-ledger
