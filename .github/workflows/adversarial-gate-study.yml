@@ -1,0 +1,44 @@
+name: adversarial-gate-study
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/adversarial-gate-study.yml'
+      - 'scripts/github_adversarial_gate_study.py'
+      - 'src/live/adversarial_gate.py'
+      - 'src/live/feature60_v2.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Gate integrity tests
+        run: pytest -q tests/test_adversarial_gate.py tests/test_live_feature60_v2.py
+      - name: Run walk-forward adversarial gate study
+        run: python scripts/github_adversarial_gate_study.py --out reports/adversarial_gate
+      - name: Upload gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adversarial-gate-study
+          path: |
+            reports/adversarial_gate/GATE_STUDY.json
+            reports/adversarial_gate/folds.csv
+          if-no-files-found: warn
+          retention-days: 90
