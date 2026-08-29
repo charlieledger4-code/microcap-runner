@@ -1,0 +1,230 @@
+{
+  "status": "COMPLETE",
+  "scanner_version": "stream_v4",
+  "mint": "HgnbzTeefCsnyde3CbK9L4dmW9it3ix5WvrczCD2pump",
+  "name": "HUMAN ANIMAL",
+  "symbol": "HUAL",
+  "horizon_s": 3600,
+  "scored_ms": 1788015814737,
+  "cutoff_ms": 1788019414737,
+  "decision": "WATCH",
+  "audit_decision": "WATCH",
+  "gated_decision": null,
+  "operational_paper_decision": null,
+  "adversarial_gate": null,
+  "action_forensics": null,
+  "prospective_controls": {
+    "random_control": true,
+    "near_miss_control": false,
+    "selection_version": "sha256_random_v1+max_below_q95_v1",
+    "run_key": "33259111516/1"
+  },
+  "entry": {
+    "quote_source": "action_time_last_observed_pump_state",
+    "gross_quote_in_raw": 10000000,
+    "tokens_owned_raw": 4510931436003,
+    "average_price_sol": 2.2168370638904456e-09,
+    "entry_network_lamports": 5000,
+    "entry_total_outlay_sol": 0.010005,
+    "account_rent_included": false,
+    "curve_fee_source": null,
+    "curve_total_fee_bps": 0,
+    "curve_protocol_fee_bps": null,
+    "curve_creator_fee_bps": null,
+    "curve_cashback_fee_bps": null
+  },
+  "migration": {
+    "observed": false,
+    "pool": null,
+    "timestamp": null
+  },
+  "history_quality": {
+    "pump": {
+      "pages": 1,
+      "errors": [],
+      "reached_start_boundary": true,
+      "page_cap_hit": false
+    },
+    "pump_tx_errors": [],
+    "pump_tx_truncated": false,
+    "pumpswap": null,
+    "pumpswap_tx_errors": [],
+    "pumpswap_tx_truncated": false
+  },
+  "events": {
+    "pump_trade_events": 419,
+    "pumpswap_trade_events": 0,
+    "execution_points": 227
+  },
+  "outcome": {
+    "future_points": 227,
+    "last_observed_ms": 1788016706000,
+    "max_observed_price_multiple": 1.3009276363560838,
+    "max_executable_multiple": 1.2764744627686158,
+    "terminal_executable_multiple": 0.010663468265867067,
+    "observed_targets": {
+      "2": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.495171438615162
+      },
+      "5": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.495171438615162
+      },
+      "10": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.495171438615162
+      },
+      "25": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.495171438615162
+      },
+      "50": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.495171438615162
+      },
+      "100": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.495171438615162
+      }
+    },
+    "executable_targets": {
+      "2": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.4858736631684158
+      },
+      "5": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.4858736631684158
+      },
+      "10": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.4858736631684158
+      },
+      "25": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.4858736631684158
+      },
+      "50": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.4858736631684158
+      },
+      "100": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.4858736631684158
+      }
+    },
+    "liquidity_limited_points": 0,
+    "guard": "Executable multiple uses protocol reserve-state sell quotes plus configured network fee. It is still a paper quote, not proof a transaction would have landed at that state."
+  },
+  "diagnostic_outcome_even_if_incomplete": {
+    "future_points": 227,
+    "last_observed_ms": 1788016706000,
+    "max_observed_price_multiple": 1.3009276363560838,
+    "max_executable_multiple": 1.2764744627686158,
+    "terminal_executable_multiple": 0.010663468265867067,
+    "observed_targets": {
+      "2": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.495171438615162
+      },
+      "5": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.495171438615162
+      },
+      "10": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.495171438615162
+      },
+      "25": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.495171438615162
+      },
+      "50": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.495171438615162
+      },
+      "100": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.495171438615162
+      }
+    },
+    "executable_targets": {
+      "2": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.4858736631684158
+      },
+      "5": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.4858736631684158
+      },
+      "10": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.4858736631684158
+      },
+      "25": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.4858736631684158
+      },
+      "50": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.4858736631684158
+      },
+      "100": {
+        "hit": false,
+        "event": "drawdown",
+        "event_ms": 1788015824000,
+        "multiple": 0.4858736631684158
+      }
+    },
+    "liquidity_limited_points": 0,
+    "guard": "Executable multiple uses protocol reserve-state sell quotes plus configured network fee. It is still a paper quote, not proof a transaction would have landed at that state."
+  },
+  "guard": "Only status COMPLETE is valid for prospective statistics. Champion and gate decisions remain separate. Account-rent capital and unknown priority/Jito costs are not yet included."
+}

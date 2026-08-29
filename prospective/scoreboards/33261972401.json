@@ -1,0 +1,311 @@
+{
+  "generated_ms": 1788020683288,
+  "complete_outcome_files": 2,
+  "horizons": {
+    "3600": {
+      "groups": {
+        "all_complete": {
+          "n": 2,
+          "with_max_executable": 2,
+          "with_terminal_executable": 2,
+          "liquidity_limited_points": 1,
+          "median_max_executable_multiple": 0.6382372313843079,
+          "mean_max_executable_multiple": 0.6382372313843079,
+          "max_executable_multiple": 1.2764744627686158,
+          "median_terminal_executable_multiple": 0.005331734132933533,
+          "mean_terminal_executable_multiple": 0.005331734132933533,
+          "targets": {
+            "2": {
+              "n": 2,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.6576197724933469
+              ]
+            },
+            "5": {
+              "n": 2,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.6576197724933469
+              ]
+            },
+            "10": {
+              "n": 2,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.6576197724933469
+              ]
+            },
+            "25": {
+              "n": 2,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.6576197724933469
+              ]
+            },
+            "50": {
+              "n": 2,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.6576197724933469
+              ]
+            },
+            "100": {
+              "n": 2,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.6576197724933469
+              ]
+            }
+          }
+        },
+        "near_miss_control": {
+          "n": 1,
+          "with_max_executable": 1,
+          "with_terminal_executable": 1,
+          "liquidity_limited_points": 1,
+          "median_max_executable_multiple": 0.0,
+          "mean_max_executable_multiple": 0.0,
+          "max_executable_multiple": 0.0,
+          "median_terminal_executable_multiple": 0.0,
+          "mean_terminal_executable_multiple": 0.0,
+          "targets": {
+            "2": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "5": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "10": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "25": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "50": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "100": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            }
+          }
+        },
+        "random_control": {
+          "n": 1,
+          "with_max_executable": 1,
+          "with_terminal_executable": 1,
+          "liquidity_limited_points": 0,
+          "median_max_executable_multiple": 1.2764744627686158,
+          "mean_max_executable_multiple": 1.2764744627686158,
+          "max_executable_multiple": 1.2764744627686158,
+          "median_terminal_executable_multiple": 0.010663468265867067,
+          "mean_terminal_executable_multiple": 0.010663468265867067,
+          "targets": {
+            "2": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "5": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "10": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "25": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "50": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "100": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            }
+          }
+        },
+        "watch": {
+          "n": 1,
+          "with_max_executable": 1,
+          "with_terminal_executable": 1,
+          "liquidity_limited_points": 0,
+          "median_max_executable_multiple": 1.2764744627686158,
+          "mean_max_executable_multiple": 1.2764744627686158,
+          "max_executable_multiple": 1.2764744627686158,
+          "median_terminal_executable_multiple": 0.010663468265867067,
+          "mean_terminal_executable_multiple": 0.010663468265867067,
+          "targets": {
+            "2": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "5": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "10": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "25": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "50": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            },
+            "100": {
+              "n": 1,
+              "hits": 0,
+              "rate": 0.0,
+              "ci95": [
+                0,
+                0.7934506856227626
+              ]
+            }
+          }
+        }
+      },
+      "comparisons": {
+        "2": {
+          "candidate_vs_random_lift": null,
+          "candidate_rate": null,
+          "random_rate": 0.0
+        },
+        "5": {
+          "candidate_vs_random_lift": null,
+          "candidate_rate": null,
+          "random_rate": 0.0
+        },
+        "10": {
+          "candidate_vs_random_lift": null,
+          "candidate_rate": null,
+          "random_rate": 0.0
+        },
+        "25": {
+          "candidate_vs_random_lift": null,
+          "candidate_rate": null,
+          "random_rate": 0.0
+        },
+        "50": {
+          "candidate_vs_random_lift": null,
+          "candidate_rate": null,
+          "random_rate": 0.0
+        },
+        "100": {
+          "candidate_vs_random_lift": null,
+          "candidate_rate": null,
+          "random_rate": 0.0
+        }
+      }
+    }
+  },
+  "guard": "Derived scoreboard only. Immutable scan/outcome files remain the source of truth; incomplete outcomes are excluded."
+}
