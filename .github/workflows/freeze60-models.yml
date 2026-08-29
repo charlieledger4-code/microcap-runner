@@ -1,0 +1,40 @@
+name: freeze60-models
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/github_freeze60_models.py'
+      - 'scripts/github_phase2_stress60.py'
+      - 'scripts/github_phase2_stress60_lowmem.py'
+      - '.github/workflows/freeze60-models.yml'
+      - 'requirements.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      PYTHONPATH: .
+      HF_HUB_DISABLE_XET: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - run: pytest -q
+      - name: Train and freeze models
+        run: python scripts/github_freeze60_models.py --out reports/frozen60
+      - name: Upload frozen research package
+        uses: actions/upload-artifact@v4
+        with:
+          name: frozen60-models
+          path: reports/frozen60/**
+          retention-days: 90
