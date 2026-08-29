@@ -4,19 +4,13 @@ on:
   schedule:
     - cron: '47 * * * *'
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/prospective-outcomes.yml'
-      - 'scripts/track_pending_outcomes.py'
-      - 'scripts/build_prospective_scoreboard.py'
-      - 'src/live/executable_outcomes.py'
-      - 'src/execution/pump_curve_quote.py'
-      - 'src/execution/pumpswap_quote.py'
 
 permissions:
   contents: write
 
+# Shares the ledger lock with the scanner so append-only evidence cannot race.
+# This workflow is intentionally schedule/manual only: code pushes previously
+# created extra pending outcome jobs that could be displaced by fresh scan runs.
 concurrency:
   group: prospective-live60-ledger
   cancel-in-progress: false
