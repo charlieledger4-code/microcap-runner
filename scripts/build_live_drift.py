@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse,json,math,time
 from pathlib import Path
 
+# This module is intentionally side-effect free with respect to model policy.
 EXPECTED={'0.95':.05,'0.99':.01,'0.995':.005,'0.999':.001}
 
 def q(vals,p):
