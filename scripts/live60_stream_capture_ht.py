@@ -2,8 +2,13 @@
 """High-throughput prospective live60 capture.
 
 Scores every observed Pump launch at the immutable observer+60s boundary from the
-WebSocket event stream.  No RPC audit is performed here: expensive chain audits
+WebSocket event stream. No RPC audit is performed here: expensive chain audits
 are delegated to ``audit_selected_live60.py`` for a preselected subset.
+
+The action tape stores both the exact normalized trades used by the model and the
+raw decoded Pump events observed by the WebSocket. The raw events let a later
+confirmed-chain audit reuse already-observed evidence and fetch only signatures
+that were missing from the live stream.
 
 Paper/research only. No signing or transaction submission exists here.
 """
@@ -11,6 +16,7 @@ from __future__ import annotations
 
 import argparse,asyncio,json,os,time
 from collections import defaultdict
+from dataclasses import asdict
 from pathlib import Path
 
 import websockets
@@ -77,9 +83,12 @@ async def main_async(a):
             'guard':'Immutable action-time score. Expensive RPC audit is performed only after outcome-independent selection.',
         }
         decisions.append(row)
-        tapes.append({'tape_version':'action_tape_ht_v1','mint':mint,'launch_received_ms':launch['received_ms'],
+        raw=[asdict(e) for e in observed]
+        tapes.append({'tape_version':'action_tape_ht_v2','mint':mint,'launch_received_ms':launch['received_ms'],
                       'decision_boundary_ms':boundary,'trade_count':len(tr),'trades':tr,
-                      'guard':'Exact normalized tape used for the action-time score.'})
+                      'raw_pump_event_count':len(raw),'raw_pump_events':raw,
+                      'stream_signature_count':len({e.source_signature for e in observed if e.source_signature}),
+                      'guard':'Exact normalized score tape plus raw decoded action-time Pump events; later audit cannot overwrite it.'})
         active.pop(mint,None);events.pop(mint,None)
 
     log_task=asyncio.create_task(log_worker());await asyncio.sleep(.5)
@@ -110,7 +119,7 @@ async def main_async(a):
     (out/'action_trade_tapes.jsonl').write_text(''.join(json.dumps(x,separators=(',',':'))+'\n' for x in tapes))
     lats=sorted(r['decision_latency_ms'] for r in decisions);dc={}
     for r in decisions:dc[r['decision']]=dc.get(r['decision'],0)+1
-    summary={'scanner_version':'stream_ht_v1','started_ms':started_ms,'ended_ms':int(time.time()*1000),
+    summary={'scanner_version':'stream_ht_v1','action_tape_version':'action_tape_ht_v2','started_ms':started_ms,'ended_ms':int(time.time()*1000),
              'collect_s_requested':a.collect_s,'launches':len(launches),'scored':len(decisions),'errors':errors,
              'decisions':dc,'median_action_latency_ms':lats[len(lats)//2] if lats else None,
              'max_action_latency_ms':max(lats) if lats else None,'stream_stats':stats,
