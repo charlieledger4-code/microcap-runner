@@ -20,6 +20,7 @@ jobs:
     env:
       PYTHONPATH: .
       SOLANA_RPC_URL: https://api.mainnet-beta.solana.com
+      SOLANA_RPC_CONCURRENCY: '8'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,12 +39,12 @@ jobs:
           git fetch origin prospective-ledger
           rm -rf /tmp/prospective-ledger-wt
           git worktree add /tmp/prospective-ledger-wt origin/prospective-ledger
-      - name: Track 1h executable outcomes
-        run: python scripts/track_pending_outcomes_all.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 3600 --max-rows 40 --max-pages 8 --max-txs 2500
+      - name: Track primary 24h executable outcomes first
+        run: python scripts/track_pending_outcomes_all.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 86400 --max-rows 6 --max-pages 16 --max-txs 5000
       - name: Track 6h executable outcomes
-        run: python scripts/track_pending_outcomes_all.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 21600 --max-rows 20 --max-pages 12 --max-txs 3500
-      - name: Track 24h executable outcomes
-        run: python scripts/track_pending_outcomes_all.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 86400 --max-rows 12 --max-pages 16 --max-txs 5000
+        run: python scripts/track_pending_outcomes_all.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 21600 --max-rows 12 --max-pages 12 --max-txs 3500
+      - name: Track 1h executable outcomes
+        run: python scripts/track_pending_outcomes_all.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 3600 --max-rows 18 --max-pages 8 --max-txs 2500
       - name: Build immutable prospective scoreboard snapshot
         run: |
           mkdir -p /tmp/prospective-ledger-wt/prospective/scoreboards /tmp/prospective-ledger-wt/prospective/progress
