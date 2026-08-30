@@ -20,7 +20,7 @@ on:
       - 'models/livecore60_v1/**'
       - 'requirements-frozen-model.txt'
   schedule:
-    - cron: '17 * * * *'
+    - cron: '35 */6 * * *'
   workflow_dispatch:
 
 permissions:
@@ -142,5 +142,5 @@ jobs:
           git -C /tmp/prospective-ledger-wt config user.name 'microcap-research-bot'
           git -C /tmp/prospective-ledger-wt config user.email 'actions@users.noreply.github.com'
           git -C /tmp/prospective-ledger-wt add "prospective/scans/${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
-          git -C /tmp/prospective-ledger-wt commit -m "Prospective live60 scan ${GITHUB_RUN_ID}/${GITHUB_RUN_ATTEMPT}"
+          git -C /tmp/prospective-ledger-wt commit -m "Prospective live60 sentinel ${GITHUB_RUN_ID}/${GITHUB_RUN_ATTEMPT}"
           git -C /tmp/prospective-ledger-wt push origin HEAD:prospective-ledger
