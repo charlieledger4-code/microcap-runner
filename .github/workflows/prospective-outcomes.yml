@@ -2,15 +2,13 @@ name: prospective-executable-outcomes
 
 on:
   schedule:
-    - cron: '47 * * * *'
+    - cron: '5 1-23/2 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
 
-# Shares the ledger lock with the scanner so append-only evidence cannot race.
-# This workflow is intentionally schedule/manual only: code pushes previously
-# created extra pending outcome jobs that could be displaced by fresh scan runs.
+# Alternates with the high-throughput scan hours and shares its ledger lock.
 concurrency:
   group: prospective-live60-ledger
   cancel-in-progress: false
@@ -33,7 +31,7 @@ jobs:
         run: pip install 'aiohttp>=3.9,<4' pytest
       - name: Outcome integrity tests
         run: |
-          python -m py_compile scripts/track_pending_outcomes.py scripts/build_prospective_scoreboard.py
+          python -m py_compile scripts/track_pending_outcomes.py scripts/track_pending_outcomes_all.py scripts/build_prospective_scoreboard.py
           pytest -q tests/test_pump_curve_quote.py tests/test_pumpswap_event.py tests/test_pumpswap_quote.py tests/test_executable_outcomes.py
       - name: Mount append-only prospective ledger
         run: |
@@ -41,11 +39,11 @@ jobs:
           rm -rf /tmp/prospective-ledger-wt
           git worktree add /tmp/prospective-ledger-wt origin/prospective-ledger
       - name: Track 1h executable outcomes
-        run: python scripts/track_pending_outcomes.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 3600 --max-rows 12 --max-pages 8 --max-txs 2500
+        run: python scripts/track_pending_outcomes_all.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 3600 --max-rows 40 --max-pages 8 --max-txs 2500
       - name: Track 6h executable outcomes
-        run: python scripts/track_pending_outcomes.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 21600 --max-rows 6 --max-pages 12 --max-txs 3500
+        run: python scripts/track_pending_outcomes_all.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 21600 --max-rows 20 --max-pages 12 --max-txs 3500
       - name: Track 24h executable outcomes
-        run: python scripts/track_pending_outcomes.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 86400 --max-rows 4 --max-pages 16 --max-txs 5000
+        run: python scripts/track_pending_outcomes_all.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 86400 --max-rows 12 --max-pages 16 --max-txs 5000
       - name: Build immutable prospective scoreboard snapshot
         run: |
           mkdir -p /tmp/prospective-ledger-wt/prospective/scoreboards
