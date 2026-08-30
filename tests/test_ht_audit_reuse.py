@@ -19,7 +19,7 @@ def sample_event():
 
 def test_action_tape_raw_event_roundtrip_preserves_signature_identity():
     ev=sample_event();restored=tape_events({'raw_pump_events':[asdict(ev)]})
-    assert AUDIT_VERSION=='ht_signature_index_missing_only_v2'
+    assert AUDIT_VERSION=='ht_signature_index_missing_only_v3'
     assert len(restored)==1
     assert restored[0].source_signature=='sig'
     assert restored[0].source_block_time==123
