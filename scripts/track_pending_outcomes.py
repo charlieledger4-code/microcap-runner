@@ -26,6 +26,7 @@ from src.live.executable_outcomes import pump_exit_points,pumpswap_exit_points,s
 RPC=os.environ.get('SOLANA_RPC_URL','https://api.mainnet-beta.solana.com')
 LAMPORTS=1_000_000_000
 MIN_CURRENT_CURVE_FEE_BPS=125
+RPC_CONCURRENCY=max(1,int(os.environ.get('SOLANA_RPC_CONCURRENCY','8')))
 
 class Pacer:
     def __init__(self,interval=.28):self.interval=interval;self.lock=asyncio.Lock();self.next_at=0.0
@@ -79,10 +80,22 @@ async def signatures_window(session,pacer,address,start_s,end_s,max_pages):
         'pages':pages,'errors':errors,'reached_start_boundary':reached_start,'page_cap_hit':pages>=max_pages and not reached_start,
     }
 
-async def fetch_transactions(session,pacer,sigs,max_txs):
-    txs=[];errors=[];truncated=len(sigs)>max_txs
-    for x in sigs[:max_txs]:
-        sig=x['signature'];tx,e=await rpc(session,pacer,'getTransaction',[sig,{'encoding':'json','commitment':'confirmed','maxSupportedTransactionVersion':0}])
+async def fetch_transactions(session,pacer,sigs,max_txs,concurrency=RPC_CONCURRENCY):
+    """Fetch transactions with bounded overlap while the shared pacer controls starts.
+
+    The public Solana endpoint permits concurrent connections but rate-limits RPC
+    starts. Sequential request/response loops waste most of the interval on
+    network latency, so tasks overlap while ``Pacer`` still spaces request starts.
+    """
+    subset=sigs[:max_txs];truncated=len(sigs)>max_txs;sem=asyncio.Semaphore(max(1,concurrency))
+    async def one(x):
+        sig=x['signature']
+        async with sem:
+            tx,e=await rpc(session,pacer,'getTransaction',[sig,{'encoding':'json','commitment':'confirmed','maxSupportedTransactionVersion':0}])
+        return sig,tx,e
+    results=await asyncio.gather(*(one(x) for x in subset)) if subset else []
+    txs=[];errors=[]
+    for sig,tx,e in results:
         if tx is None:errors.append({'signature':sig,'error':e or 'null_result'})
         else:txs.append((sig,tx))
     return txs,errors,truncated
@@ -159,7 +172,7 @@ async def track_one(session,pacer,row,horizon_s,max_pages,max_txs,entry_network_
             'curve_fee_source':q.get('fee_source'),'curve_total_fee_bps':q.get('total_fee_bps'),'curve_protocol_fee_bps':q.get('protocol_fee_bps'),'curve_creator_fee_bps':q.get('creator_fee_bps'),'curve_cashback_fee_bps':q.get('cashback_fee_bps'),
         },
         'migration':{'observed':pool is not None,'pool':pool.pool if pool else None,'timestamp':pool.timestamp if pool else None},
-        'history_quality':{'pump':mhist,'pump_tx_errors':mtxerr,'pump_tx_truncated':mtrunc,'pumpswap':phist,'pumpswap_tx_errors':ptxerr,'pumpswap_tx_truncated':ptrunc},
+        'history_quality':{'rpc_concurrency':RPC_CONCURRENCY,'pump':mhist,'pump_tx_errors':mtxerr,'pump_tx_truncated':mtrunc,'pumpswap':phist,'pumpswap_tx_errors':ptxerr,'pumpswap_tx_truncated':ptrunc},
         'events':{'pump_trade_events':len(pump_events),'pumpswap_trade_events':len(swap_events),'execution_points':len(points)},
         'outcome':summary if complete else None,'diagnostic_outcome_even_if_incomplete':summary,
         'guard':'Only status COMPLETE is valid for prospective statistics. Champion and gate decisions remain separate. Account-rent capital and unknown priority/Jito costs are not yet included.',
@@ -167,11 +180,12 @@ async def track_one(session,pacer,row,horizon_s,max_pages,max_txs,entry_network_
 
 async def main_async(a):
     ledger=Path(a.ledger_root);now_ms=int(time.time()*1000);todo=scan_rows(ledger,a.horizon_s,now_ms);pacer=Pacer(a.rpc_interval);results=[]
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30),headers={'User-Agent':'microcap-runner-outcomes/0.4'}) as session:
+    connector=aiohttp.TCPConnector(limit=max(16,RPC_CONCURRENCY*2))
+    async with aiohttp.ClientSession(connector=connector,timeout=aiohttp.ClientTimeout(total=30),headers={'User-Agent':'microcap-runner-outcomes/0.5'}) as session:
         for scan_id,row,out in todo[:a.max_rows]:
             res=await track_one(session,pacer,row,a.horizon_s,a.max_pages,a.max_txs,a.entry_network_lamports,a.exit_network_lamports)
             out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(res,indent=2));results.append({'scan_id':scan_id,'mint':row['mint'],'path':str(out),'status':res['status'],'reason':res.get('reason'),'decision':row.get('decision'),'gated_decision':row.get('gated_decision')})
-    print(json.dumps({'horizon_s':a.horizon_s,'eligible_pending':len(todo),'processed':len(results),'results':results},indent=2))
+    print(json.dumps({'horizon_s':a.horizon_s,'eligible_pending':len(todo),'processed':len(results),'rpc_concurrency':RPC_CONCURRENCY,'results':results},indent=2))
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--ledger-root',required=True);p.add_argument('--horizon-s',type=int,required=True);p.add_argument('--max-rows',type=int,default=12);p.add_argument('--max-pages',type=int,default=8);p.add_argument('--max-txs',type=int,default=2500);p.add_argument('--rpc-interval',type=float,default=.28);p.add_argument('--entry-network-lamports',type=int,default=5000);p.add_argument('--exit-network-lamports',type=int,default=5000)
