@@ -31,7 +31,7 @@ jobs:
         run: pip install 'aiohttp>=3.9,<4' pytest
       - name: Outcome integrity tests
         run: |
-          python -m py_compile scripts/track_pending_outcomes.py scripts/track_pending_outcomes_all.py scripts/build_prospective_scoreboard.py
+          python -m py_compile scripts/track_pending_outcomes.py scripts/track_pending_outcomes_all.py scripts/build_prospective_scoreboard.py scripts/build_forward_progress.py
           pytest -q tests/test_pump_curve_quote.py tests/test_pumpswap_event.py tests/test_pumpswap_quote.py tests/test_executable_outcomes.py
       - name: Mount append-only prospective ledger
         run: |
@@ -46,15 +46,19 @@ jobs:
         run: python scripts/track_pending_outcomes_all.py --ledger-root /tmp/prospective-ledger-wt --horizon-s 86400 --max-rows 12 --max-pages 16 --max-txs 5000
       - name: Build immutable prospective scoreboard snapshot
         run: |
-          mkdir -p /tmp/prospective-ledger-wt/prospective/scoreboards
+          mkdir -p /tmp/prospective-ledger-wt/prospective/scoreboards /tmp/prospective-ledger-wt/prospective/progress
           python scripts/build_prospective_scoreboard.py \
             --ledger-root /tmp/prospective-ledger-wt \
             --out "/tmp/prospective-ledger-wt/prospective/scoreboards/${GITHUB_RUN_ID}.json"
-      - name: Commit outcome and scoreboard evidence without modifying original scans
+          python scripts/build_forward_progress.py \
+            --ledger-root /tmp/prospective-ledger-wt \
+            --config configs/forward_experiment_v1.json \
+            --out "/tmp/prospective-ledger-wt/prospective/progress/${GITHUB_RUN_ID}.json"
+      - name: Commit outcome, scoreboard and progress evidence
         run: |
           git -C /tmp/prospective-ledger-wt config user.name 'microcap-research-bot'
           git -C /tmp/prospective-ledger-wt config user.email 'actions@users.noreply.github.com'
-          git -C /tmp/prospective-ledger-wt add prospective/outcomes prospective/scoreboards || true
+          git -C /tmp/prospective-ledger-wt add prospective/outcomes prospective/scoreboards prospective/progress || true
           if git -C /tmp/prospective-ledger-wt diff --cached --quiet; then
             echo 'No matured new outcomes or scoreboard changes.'
           else
