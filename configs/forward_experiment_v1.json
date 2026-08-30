@@ -1,0 +1,32 @@
+{
+  "experiment_id": "livecore60_forward_v1",
+  "frozen_model": "models/livecore60_v1",
+  "decision_age_seconds": 60,
+  "primary_rank_target": "10x",
+  "entry_ticket_sol": 0.01,
+  "outcome_horizons_seconds": [3600, 21600, 86400],
+  "primary_outcome": "24h executable 10x before 50% executable drawdown",
+  "population_policy": "score every captured launch; RPC-audit outcome-independent selected candidates/controls",
+  "interim_gate": {
+    "min_population_launches": 10000,
+    "min_valid_champion_candidates": 100,
+    "purpose": "data quality and directional evidence only; no champion or threshold changes"
+  },
+  "primary_gate": {
+    "min_population_launches": 50000,
+    "min_valid_champion_candidates": 400,
+    "min_valid_random_controls": 250,
+    "min_candidate_executable_10x_hits": 10,
+    "candidate_vs_random_10x_lift_floor": 1.5,
+    "require_candidate_rate_above_random": true,
+    "require_q99_rate_above_watch_sample_rate": true,
+    "require_block_robustness_analysis": true
+  },
+  "operational_quality": {
+    "min_selected_rpc_audit_valid_fraction": 0.9,
+    "max_median_action_latency_ms": 250,
+    "drift_is_stratified_not_auto_retrained": true
+  },
+  "promotion_guard": "No real-money authorization follows automatically from passing this gate. Full landing/failure/priority/ATA and capacity economics must also be validated.",
+  "freeze_guard": "Prospective outcomes cannot change the frozen champion, score thresholds, candidate definitions, control selection or primary gate until this experiment closes. Bug fixes must be versioned and affected rows quarantined rather than rewritten."
+}
