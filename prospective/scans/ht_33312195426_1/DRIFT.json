@@ -1,0 +1,71 @@
+{
+  "generated_ms": 1788096901849,
+  "rows": 102,
+  "score10_quantiles": {
+    "0.1": 0.05714548084798303,
+    "0.25": 0.07646743134650269,
+    "0.5": 0.10127642538147848,
+    "0.75": 0.11642365252209662,
+    "0.9": 0.37558236192064365,
+    "0.95": 0.7673648711016001,
+    "0.99": 0.8691018445417905
+  },
+  "frozen_threshold_occupancy": {
+    "0.95": {
+      "threshold": 0.8072107976094448,
+      "n": 102,
+      "hits": 4,
+      "rate": 0.0392156862745098,
+      "expected_rate": 0.05,
+      "z_vs_training_quantile": -0.4997419354666803
+    },
+    "0.99": {
+      "threshold": 0.8678932396379199,
+      "n": 102,
+      "hits": 2,
+      "rate": 0.0196078431372549,
+      "expected_rate": 0.01,
+      "z_vs_training_quantile": 0.9752330089100024
+    },
+    "0.995": {
+      "threshold": 0.8711575737756854,
+      "n": 102,
+      "hits": 1,
+      "rate": 0.00980392156862745,
+      "expected_rate": 0.005,
+      "z_vs_training_quantile": 0.687859043733321
+    },
+    "0.999": {
+      "threshold": 0.8754860268135511,
+      "n": 102,
+      "hits": 0,
+      "rate": 0.0,
+      "expected_rate": 0.001,
+      "z_vs_training_quantile": -0.31953419551294054
+    }
+  },
+  "feature_missingness": {
+    "last_trade_gap_sec": {
+      "count": 39,
+      "rate": 0.38235294117647056
+    },
+    "first_price_sol": {
+      "count": 39,
+      "rate": 0.38235294117647056
+    },
+    "entry_price_sol": {
+      "count": 39,
+      "rate": 0.38235294117647056
+    },
+    "price_return": {
+      "count": 39,
+      "rate": 0.38235294117647056
+    },
+    "price_range_ratio": {
+      "count": 39,
+      "rate": 0.38235294117647056
+    }
+  },
+  "status": "REGIME_DRIFT",
+  "guard": "Diagnostic only. Drift status cannot retrain the model or change frozen thresholds."
+}

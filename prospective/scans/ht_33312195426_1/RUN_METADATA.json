@@ -1,0 +1,12 @@
+{
+  "github_run_id": "33312195426",
+  "github_run_attempt": "1",
+  "github_sha": "11087a2df3287182569fe6e8662a125d12f6045d",
+  "github_event": "push",
+  "recorded_ms": 1788096901890,
+  "scanner": "stream_ht_v1",
+  "champion_model": "models/livecore60_v1",
+  "policy": "score_all_at_observer+60s; audit outcome-independent selected subset; no adaptive thresholds",
+  "full_capture_retention": "GitHub Actions artifact 90d",
+  "permanent_ledger": "all scores compact + full selected rows/tapes"
+}
