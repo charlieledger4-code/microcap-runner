@@ -1,0 +1,130 @@
+name: prospective-highthroughput-live60
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prospective-highthroughput.yml'
+      - 'scripts/live60_stream_capture_ht.py'
+      - 'scripts/select_ht_audit_set.py'
+      - 'scripts/audit_selected_live60.py'
+      - 'scripts/build_live_drift.py'
+      - 'scripts/package_ht_ledger.py'
+      - 'scripts/track_pending_outcomes_all.py'
+  schedule:
+    - cron: '5 */2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prospective-live60-ledger
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PYTHONPATH: .
+      SOLANA_RPC_URL: https://api.mainnet-beta.solana.com
+      SOLANA_WSS_URL: wss://api.mainnet-beta.solana.com
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install frozen scanner runtime
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-frozen-model.txt 'aiohttp>=3.9,<4' 'websockets>=12,<18' pytest
+      - name: High-throughput integrity tests
+        run: |
+          python -m py_compile \
+            scripts/live60_stream_capture_ht.py scripts/select_ht_audit_set.py \
+            scripts/audit_selected_live60.py scripts/build_live_drift.py \
+            scripts/package_ht_ledger.py scripts/track_pending_outcomes_all.py
+          pytest -q \
+            tests/test_pump_trade_event.py tests/test_pump_log_events.py \
+            tests/test_live_feature60.py tests/test_live_feature60_v2.py \
+            tests/test_live_scoring.py tests/test_pump_curve_quote.py
+      - name: Verify frozen champion hashes
+        run: |
+          python - <<'PY'
+          from src.live.scoring import LiveCoreScorer
+          s=LiveCoreScorer('models/livecore60_v1')
+          print(s.manifest['feature_contract'])
+          PY
+      - name: Capture and score all live launches
+        run: |
+          rm -rf reports/prospective_ht_current
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then COLLECT=3000; else COLLECT=180; fi
+          python scripts/live60_stream_capture_ht.py \
+            --out reports/prospective_ht_current \
+            --bundle models/livecore60_v1 \
+            --collect-s "$COLLECT" --max-mints 5000 --age-s 60 --paper-ticket-sol .01
+      - name: Preselect audit population before RPC truth lookup
+        run: |
+          python scripts/select_ht_audit_set.py \
+            --rows reports/prospective_ht_current/scored_rows.jsonl \
+            --run-key "ht/${GITHUB_RUN_ID}/${GITHUB_RUN_ATTEMPT}" \
+            --random-controls 8 --near-misses 3 --watch-audit 8 --reject-audit 4 --max-candidates 20
+      - name: RPC-audit only selected rows
+        run: |
+          python scripts/audit_selected_live60.py \
+            --rows reports/prospective_ht_current/scored_rows.jsonl \
+            --launches reports/prospective_ht_current/launches.jsonl \
+            --bundle models/livecore60_v1 \
+            --age-s 60 --sweeps 3 --sweep-gap-s 2 --max-txs 750 --rpc-interval .22 --min-fraction .98
+      - name: Add action-time coordination diagnostics
+        run: |
+          python scripts/annotate_action_forensics.py \
+            --rows reports/prospective_ht_current/scored_rows.jsonl \
+            --tapes reports/prospective_ht_current/action_trade_tapes.jsonl
+          python scripts/apply_adversarial_gate.py \
+            --rows reports/prospective_ht_current/scored_rows.jsonl --mode shadow
+      - name: Build frozen-score drift report
+        run: |
+          python scripts/build_live_drift.py \
+            --rows reports/prospective_ht_current/scored_rows.jsonl \
+            --manifest models/livecore60_v1/LIVECORE_MANIFEST.json \
+            --out reports/prospective_ht_current/DRIFT.json
+      - name: Add immutable run metadata
+        run: |
+          python - <<'PY'
+          import json,os,time,pathlib
+          p=pathlib.Path('reports/prospective_ht_current/RUN_METADATA.json')
+          p.write_text(json.dumps({
+            'github_run_id':os.environ['GITHUB_RUN_ID'],'github_run_attempt':os.environ['GITHUB_RUN_ATTEMPT'],
+            'github_sha':os.environ['GITHUB_SHA'],'github_event':os.environ['GITHUB_EVENT_NAME'],
+            'recorded_ms':int(time.time()*1000),'scanner':'stream_ht_v1','champion_model':'models/livecore60_v1',
+            'policy':'score_all_at_observer+60s; audit outcome-independent selected subset; no adaptive thresholds',
+            'full_capture_retention':'GitHub Actions artifact 90d','permanent_ledger':'all scores compact + full selected rows/tapes'
+          },indent=2))
+          PY
+      - name: Upload full forensic run artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prospective-ht-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/prospective_ht_current/**
+          if-no-files-found: error
+          retention-days: 90
+      - name: Build compact permanent ledger package
+        run: |
+          rm -rf /tmp/ht-ledger-package
+          python scripts/package_ht_ledger.py --run-dir reports/prospective_ht_current --out /tmp/ht-ledger-package
+      - name: Append immutable compact evidence
+        run: |
+          git fetch origin prospective-ledger
+          rm -rf /tmp/prospective-ledger-wt
+          git worktree add /tmp/prospective-ledger-wt origin/prospective-ledger
+          dest="/tmp/prospective-ledger-wt/prospective/scans/ht_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$dest"; cp -R /tmp/ht-ledger-package/. "$dest/"
+          git -C /tmp/prospective-ledger-wt config user.name 'microcap-research-bot'
+          git -C /tmp/prospective-ledger-wt config user.email 'actions@users.noreply.github.com'
+          git -C /tmp/prospective-ledger-wt add "prospective/scans/ht_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          git -C /tmp/prospective-ledger-wt commit -m "Append HT prospective scan ${GITHUB_RUN_ID}/${GITHUB_RUN_ATTEMPT}"
+          git -C /tmp/prospective-ledger-wt push origin HEAD:prospective-ledger
