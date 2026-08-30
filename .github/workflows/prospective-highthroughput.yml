@@ -19,7 +19,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: prospective-live60-ledger
+  group: ${{ github.event_name == 'push' && 'prospective-ht-smoke' || 'prospective-live60-ledger' }}
   cancel-in-progress: false
 
 jobs:
@@ -117,6 +117,7 @@ jobs:
           rm -rf /tmp/ht-ledger-package
           python scripts/package_ht_ledger.py --run-dir reports/prospective_ht_current --out /tmp/ht-ledger-package
       - name: Append immutable compact evidence
+        if: github.event_name != 'push'
         run: |
           git fetch origin prospective-ledger
           rm -rf /tmp/prospective-ledger-wt
