@@ -73,14 +73,16 @@ jobs:
             --rows reports/prospective_ht_current/scored_rows.jsonl \
             --run-key "ht/${GITHUB_RUN_ID}/${GITHUB_RUN_ATTEMPT}" \
             --random-controls 8 --near-misses 3 --watch-audit 8 --reject-audit 4 --max-candidates 20
-      - name: RPC-audit only selected rows using signature gaps
+      - name: RPC-audit selected rows with adaptive public-RPC pacing
         run: |
           python scripts/audit_selected_live60.py \
             --rows reports/prospective_ht_current/scored_rows.jsonl \
             --launches reports/prospective_ht_current/launches.jsonl \
             --tapes reports/prospective_ht_current/action_trade_tapes.jsonl \
             --bundle models/livecore60_v1 \
-            --age-s 60 --sweeps 3 --sweep-gap-s 2 --max-txs 750 --rpc-interval .22 --min-fraction .98
+            --age-s 60 --sweeps 3 --sweep-gap-s 2 \
+            --max-signature-pages 6 --max-txs 750 \
+            --rpc-interval .35 --audit-concurrency 4 --min-fraction .98
       - name: Add action-time coordination diagnostics
         run: |
           python scripts/annotate_action_forensics.py \
@@ -103,7 +105,7 @@ jobs:
             'github_run_id':os.environ['GITHUB_RUN_ID'],'github_run_attempt':os.environ['GITHUB_RUN_ATTEMPT'],
             'github_sha':os.environ['GITHUB_SHA'],'github_event':os.environ['GITHUB_EVENT_NAME'],
             'recorded_ms':int(time.time()*1000),'scanner':'stream_ht_v1','action_tape':'action_tape_ht_v2',
-            'audit':'ht_signature_index_missing_only_v2','champion_model':'models/livecore60_v1',
+            'audit':'ht_signature_index_missing_only_v3','champion_model':'models/livecore60_v1',
             'policy':'score_all_at_observer+60s; audit outcome-independent selected subset; no adaptive thresholds',
             'full_capture_retention':'GitHub Actions artifact 90d','permanent_ledger':'all scores compact + full selected rows/tapes'
           },indent=2))
