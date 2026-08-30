@@ -20,7 +20,7 @@ permissions:
 
 concurrency:
   group: ${{ github.event_name == 'push' && 'prospective-ht-smoke' || 'prospective-live60-ledger' }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 
 jobs:
   capture:
