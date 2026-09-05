@@ -1,0 +1,24 @@
+{
+  "scanner_version": "stream_ht_v1",
+  "action_tape_version": "action_tape_ht_v2",
+  "started_ms": 1788596341732,
+  "ended_ms": 1788599397590,
+  "collect_s_requested": 3000,
+  "launches": 420,
+  "scored": 420,
+  "errors": [],
+  "decisions": {
+    "REJECT": 337,
+    "WATCH": 58,
+    "PAPER_CANDIDATE": 19,
+    "PAPER_PRIORITY": 6
+  },
+  "median_action_latency_ms": 10,
+  "max_action_latency_ms": 38,
+  "stream_stats": {
+    "log_envelopes": 55242,
+    "pump_events": 55400,
+    "matched_events": 17866
+  },
+  "guard": "All launches are scored; only a predeclared subset is RPC-audited later."
+}
