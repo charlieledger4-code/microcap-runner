@@ -1,0 +1,26 @@
+{
+  "scanner_version": "stream_ht_v1",
+  "action_tape_version": "action_tape_ht_v2",
+  "started_ms": 1792036353509,
+  "ended_ms": 1792038951999,
+  "collect_s_requested": 3000,
+  "launches": 419,
+  "scored": 419,
+  "errors": [
+    "ConnectionClosedError:no close frame received or sent"
+  ],
+  "decisions": {
+    "REJECT": 384,
+    "PAPER_CANDIDATE": 9,
+    "WATCH": 22,
+    "PAPER_PRIORITY": 4
+  },
+  "median_action_latency_ms": 10,
+  "max_action_latency_ms": 52,
+  "stream_stats": {
+    "log_envelopes": 110313,
+    "pump_events": 110850,
+    "matched_events": 21247
+  },
+  "guard": "All launches are scored; only a predeclared subset is RPC-audited later."
+}
