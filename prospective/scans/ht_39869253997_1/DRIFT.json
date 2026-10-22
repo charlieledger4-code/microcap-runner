@@ -1,0 +1,78 @@
+{
+  "generated_ms": 1792713494881,
+  "rows": 1064,
+  "minimum_rows_for_drift_call": 200,
+  "score10_quantiles": {
+    "0.1": 0.07302433449564365,
+    "0.25": 0.10493644667005378,
+    "0.5": 0.10493644667005378,
+    "0.75": 0.17400515705924777,
+    "0.9": 0.6473694005793716,
+    "0.95": 0.8196554986671397,
+    "0.99": 0.8710666411024555
+  },
+  "frozen_threshold_occupancy": {
+    "0.95": {
+      "threshold": 0.8072107976094448,
+      "n": 1064,
+      "hits": 62,
+      "rate": 0.05827067669172932,
+      "expected_rate": 0.05,
+      "z_vs_training_quantile": 1.2378415414891226
+    },
+    "0.99": {
+      "threshold": 0.8678932396379199,
+      "n": 1064,
+      "hits": 18,
+      "rate": 0.016917293233082706,
+      "expected_rate": 0.01,
+      "z_vs_training_quantile": 2.2677198577160422
+    },
+    "0.995": {
+      "threshold": 0.8711575737756854,
+      "n": 1064,
+      "hits": 10,
+      "rate": 0.009398496240601503,
+      "expected_rate": 0.005,
+      "z_vs_training_quantile": 2.0341290238407104
+    },
+    "0.999": {
+      "threshold": 0.8754860268135511,
+      "n": 1064,
+      "hits": 2,
+      "rate": 0.0018796992481203006,
+      "expected_rate": 0.001,
+      "z_vs_training_quantile": 0.9078671262687953
+    }
+  },
+  "unexpected_feature_missingness": {},
+  "structural_feature_missingness": {
+    "last_trade_gap_sec": {
+      "count": 480,
+      "rate": 0.45112781954887216,
+      "reason": "no_human_trades_at_action_time"
+    },
+    "first_price_sol": {
+      "count": 476,
+      "rate": 0.4473684210526316,
+      "reason": "no_human_trades_at_action_time"
+    },
+    "entry_price_sol": {
+      "count": 476,
+      "rate": 0.4473684210526316,
+      "reason": "no_human_trades_at_action_time"
+    },
+    "price_return": {
+      "count": 476,
+      "rate": 0.4473684210526316,
+      "reason": "no_human_trades_at_action_time"
+    },
+    "price_range_ratio": {
+      "count": 476,
+      "rate": 0.4473684210526316,
+      "reason": "no_human_trades_at_action_time"
+    }
+  },
+  "status": "NO_SEVERE_DRIFT",
+  "guard": "Diagnostic only. Structural missingness from zero-human-trade launches is not pipeline drift; status cannot retrain the model or change frozen thresholds."
+}
