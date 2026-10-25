@@ -1,0 +1,52 @@
+{
+  "generated_ms": 1792935139113,
+  "rows": 0,
+  "minimum_rows_for_drift_call": 200,
+  "score10_quantiles": {
+    "0.1": null,
+    "0.25": null,
+    "0.5": null,
+    "0.75": null,
+    "0.9": null,
+    "0.95": null,
+    "0.99": null
+  },
+  "frozen_threshold_occupancy": {
+    "0.95": {
+      "threshold": 0.8072107976094448,
+      "n": 0,
+      "hits": 0,
+      "rate": null,
+      "expected_rate": 0.05,
+      "z_vs_training_quantile": null
+    },
+    "0.99": {
+      "threshold": 0.8678932396379199,
+      "n": 0,
+      "hits": 0,
+      "rate": null,
+      "expected_rate": 0.01,
+      "z_vs_training_quantile": null
+    },
+    "0.995": {
+      "threshold": 0.8711575737756854,
+      "n": 0,
+      "hits": 0,
+      "rate": null,
+      "expected_rate": 0.005,
+      "z_vs_training_quantile": null
+    },
+    "0.999": {
+      "threshold": 0.8754860268135511,
+      "n": 0,
+      "hits": 0,
+      "rate": null,
+      "expected_rate": 0.001,
+      "z_vs_training_quantile": null
+    }
+  },
+  "unexpected_feature_missingness": {},
+  "structural_feature_missingness": {},
+  "status": "INSUFFICIENT_SAMPLE",
+  "guard": "Diagnostic only. Structural missingness from zero-human-trade launches is not pipeline drift; status cannot retrain the model or change frozen thresholds."
+}

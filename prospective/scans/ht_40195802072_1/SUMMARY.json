@@ -1,0 +1,21 @@
+{
+  "scanner_version": "stream_ht_v1",
+  "action_tape_version": "action_tape_ht_v2",
+  "started_ms": 1792935136451,
+  "ended_ms": 1792935137233,
+  "collect_s_requested": 3000,
+  "launches": 0,
+  "scored": 0,
+  "errors": [
+    "InvalidStatus:server rejected WebSocket connection: HTTP 502"
+  ],
+  "decisions": {},
+  "median_action_latency_ms": null,
+  "max_action_latency_ms": null,
+  "stream_stats": {
+    "log_envelopes": 0,
+    "pump_events": 0,
+    "matched_events": 0
+  },
+  "guard": "All launches are scored; only a predeclared subset is RPC-audited later."
+}
