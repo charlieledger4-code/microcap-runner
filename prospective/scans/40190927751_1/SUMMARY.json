@@ -1,0 +1,22 @@
+{
+  "started_ms": 1792929402092,
+  "ended_ms": 1792929402822,
+  "scanner_version": "stream_v4",
+  "launches": 0,
+  "launch_errors": [
+    "InvalidStatus:server rejected WebSocket connection: HTTP 502"
+  ],
+  "valid_mints": 0,
+  "invalid_mints": 0,
+  "decisions": {},
+  "direct_log_stats": {
+    "envelopes": 23,
+    "events": 23
+  },
+  "median_action_latency_ms": null,
+  "max_action_latency_ms": null,
+  "median_abs_audit_10x_score_delta": null,
+  "audit_decision_changes": 0,
+  "direct_signature_fraction": null,
+  "guard": "Action-time decisions are immutable. Audit status is outcome-independent data-quality evidence recorded later."
+}
