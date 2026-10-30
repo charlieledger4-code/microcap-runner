@@ -1,0 +1,22 @@
+{
+  "started_ms": 1793318723925,
+  "ended_ms": 1793319075178,
+  "scanner_version": "stream_v4",
+  "launches": 3,
+  "launch_errors": [],
+  "valid_mints": 0,
+  "invalid_mints": 3,
+  "decisions": {
+    "REJECT": 3
+  },
+  "direct_log_stats": {
+    "envelopes": 3194,
+    "events": 3196
+  },
+  "median_action_latency_ms": 11,
+  "max_action_latency_ms": 62,
+  "median_abs_audit_10x_score_delta": null,
+  "audit_decision_changes": 0,
+  "direct_signature_fraction": 0.18652849740932642,
+  "guard": "Action-time decisions are immutable. Audit status is outcome-independent data-quality evidence recorded later."
+}
