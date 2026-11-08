@@ -1,0 +1,78 @@
+{
+  "generated_ms": 1794118043281,
+  "rows": 250,
+  "minimum_rows_for_drift_call": 200,
+  "score10_quantiles": {
+    "0.1": 0.06249415757481295,
+    "0.25": 0.10005063365339281,
+    "0.5": 0.10127642538147848,
+    "0.75": 0.14495639405500574,
+    "0.9": 0.42957963818812955,
+    "0.95": 0.7801504244764912,
+    "0.99": 0.8591679632376601
+  },
+  "frozen_threshold_occupancy": {
+    "0.95": {
+      "threshold": 0.8072107976094448,
+      "n": 250,
+      "hits": 11,
+      "rate": 0.044,
+      "expected_rate": 0.05,
+      "z_vs_training_quantile": -0.4352857500660074
+    },
+    "0.99": {
+      "threshold": 0.8678932396379199,
+      "n": 250,
+      "hits": 1,
+      "rate": 0.004,
+      "expected_rate": 0.01,
+      "z_vs_training_quantile": -0.9534625892455922
+    },
+    "0.995": {
+      "threshold": 0.8711575737756854,
+      "n": 250,
+      "hits": 0,
+      "rate": 0.0,
+      "expected_rate": 0.005,
+      "z_vs_training_quantile": -1.1208395991555509
+    },
+    "0.999": {
+      "threshold": 0.8754860268135511,
+      "n": 250,
+      "hits": 0,
+      "rate": 0.0,
+      "expected_rate": 0.001,
+      "z_vs_training_quantile": -0.5002501876563868
+    }
+  },
+  "unexpected_feature_missingness": {},
+  "structural_feature_missingness": {
+    "last_trade_gap_sec": {
+      "count": 96,
+      "rate": 0.384,
+      "reason": "no_human_trades_at_action_time"
+    },
+    "first_price_sol": {
+      "count": 94,
+      "rate": 0.376,
+      "reason": "no_human_trades_at_action_time"
+    },
+    "entry_price_sol": {
+      "count": 94,
+      "rate": 0.376,
+      "reason": "no_human_trades_at_action_time"
+    },
+    "price_return": {
+      "count": 94,
+      "rate": 0.376,
+      "reason": "no_human_trades_at_action_time"
+    },
+    "price_range_ratio": {
+      "count": 94,
+      "rate": 0.376,
+      "reason": "no_human_trades_at_action_time"
+    }
+  },
+  "status": "NO_SEVERE_DRIFT",
+  "guard": "Diagnostic only. Structural missingness from zero-human-trade launches is not pipeline drift; status cannot retrain the model or change frozen thresholds."
+}
