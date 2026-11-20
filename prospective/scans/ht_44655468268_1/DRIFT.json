@@ -1,0 +1,78 @@
+{
+  "generated_ms": 1795143594168,
+  "rows": 300,
+  "minimum_rows_for_drift_call": 200,
+  "score10_quantiles": {
+    "0.1": 0.07695936236255266,
+    "0.25": 0.08913833639141727,
+    "0.5": 0.10493644667005378,
+    "0.75": 0.21582093460016014,
+    "0.9": 0.660872255137488,
+    "0.95": 0.8021024471875223,
+    "0.99": 0.8717220863442937
+  },
+  "frozen_threshold_occupancy": {
+    "0.95": {
+      "threshold": 0.8072107976094448,
+      "n": 300,
+      "hits": 15,
+      "rate": 0.05,
+      "expected_rate": 0.05,
+      "z_vs_training_quantile": 0.0
+    },
+    "0.99": {
+      "threshold": 0.8678932396379199,
+      "n": 300,
+      "hits": 7,
+      "rate": 0.023333333333333334,
+      "expected_rate": 0.01,
+      "z_vs_training_quantile": 2.321035412742638
+    },
+    "0.995": {
+      "threshold": 0.8711575737756854,
+      "n": 300,
+      "hits": 5,
+      "rate": 0.016666666666666666,
+      "expected_rate": 0.005,
+      "z_vs_training_quantile": 2.8649092817452027
+    },
+    "0.999": {
+      "threshold": 0.8754860268135511,
+      "n": 300,
+      "hits": 0,
+      "rate": 0.0,
+      "expected_rate": 0.001,
+      "z_vs_training_quantile": -0.547996624351191
+    }
+  },
+  "unexpected_feature_missingness": {},
+  "structural_feature_missingness": {
+    "last_trade_gap_sec": {
+      "count": 108,
+      "rate": 0.36,
+      "reason": "no_human_trades_at_action_time"
+    },
+    "first_price_sol": {
+      "count": 108,
+      "rate": 0.36,
+      "reason": "no_human_trades_at_action_time"
+    },
+    "entry_price_sol": {
+      "count": 108,
+      "rate": 0.36,
+      "reason": "no_human_trades_at_action_time"
+    },
+    "price_return": {
+      "count": 108,
+      "rate": 0.36,
+      "reason": "no_human_trades_at_action_time"
+    },
+    "price_range_ratio": {
+      "count": 108,
+      "rate": 0.36,
+      "reason": "no_human_trades_at_action_time"
+    }
+  },
+  "status": "NO_SEVERE_DRIFT",
+  "guard": "Diagnostic only. Structural missingness from zero-human-trade launches is not pipeline drift; status cannot retrain the model or change frozen thresholds."
+}
