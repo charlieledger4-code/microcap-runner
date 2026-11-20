@@ -1,0 +1,21 @@
+{
+  "scanner_version": "stream_ht_v1",
+  "action_tape_version": "action_tape_ht_v2",
+  "started_ms": 1795168213572,
+  "ended_ms": 1795168214193,
+  "collect_s_requested": 3000,
+  "launches": 0,
+  "scored": 0,
+  "errors": [
+    "ConnectionRefusedError:[Errno 111] Connect call failed ('216.155.134.164', 443)"
+  ],
+  "decisions": {},
+  "median_action_latency_ms": null,
+  "max_action_latency_ms": null,
+  "stream_stats": {
+    "log_envelopes": 16,
+    "pump_events": 16,
+    "matched_events": 0
+  },
+  "guard": "All launches are scored; only a predeclared subset is RPC-audited later."
+}
